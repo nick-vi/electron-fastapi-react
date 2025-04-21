@@ -15,7 +15,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint:py": "cd api && uv run -m ruff check .",
-    "format:py": "cd api && uv run -m ruff format ."
+    "format:py": "cd api && uv run -m ruff format .",
+    "setup:py": "cd api && uv pip install -e .",
+    "postinstall": "npm run setup:py"
   },
   "keywords": [],
   "author": {
@@ -58,7 +60,15 @@
     "extraResources": [
       {
         "from": "api",
-        "to": "api"
+        "to": "api",
+        "filter": [
+          "**/*",
+          "!**/__pycache__",
+          "!**/.venv",
+          "!**/venv",
+          "!**/.mypy_cache",
+          "!**/.ruff_cache"
+        ]
       }
     ],
     "mac": {
