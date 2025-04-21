@@ -4,7 +4,8 @@
  * It has access to both Node.js and browser APIs.
  */
 
-import type { LogEntry, LogLevel } from "@common/logger-types";
+import type { LogEntry } from "@common/logger-types";
+import type { ElectronAPI } from "@common/renderer-api";
 import { contextBridge, ipcRenderer } from "electron";
 
 /**
@@ -40,7 +41,11 @@ contextBridge.exposeInMainWorld("api", {
   /**
    * Log a message to the main process
    */
-  log: (level: LogLevel, message: string, data?: unknown) => {
+  log: (
+    level: ElectronAPI["log"] extends (level: infer L, ...args: any[]) => any ? L : never,
+    message: string,
+    data?: unknown
+  ) => {
     ipcRenderer.invoke("log", level, message, data);
   },
 

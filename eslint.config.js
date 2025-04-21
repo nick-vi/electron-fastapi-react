@@ -61,6 +61,7 @@ export default [
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/no-base-to-string": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
 
       // Disable rules that conflict with Prettier
       ...prettierConfig.rules,

@@ -42,8 +42,8 @@ const startApiSidecar = (): void => {
 
     logger.info(`Starting Python script directly: ${pythonScript}`);
 
-    const pythonExe = process.platform === "win32" ? "python" : "python3";
-    apiProcess = spawn(pythonExe, [pythonScript, appPath]);
+    const uvCommand = process.platform === "win32" ? "uv" : "uv";
+    apiProcess = spawn(uvCommand, ["run", pythonScript, appPath]);
   } else {
     const apiPath =
       process.platform === "win32"
@@ -109,7 +109,7 @@ const createWindow = (): void => {
     height: 800,
     webPreferences: {
       preload: isDevelopment()
-        ? path.join(process.cwd(), "out/preload/index.mjs")
+        ? path.join(process.cwd(), "dist-electron/preload/index.js")
         : path.join(currentDirPath, "../preload/index.js"),
       contextIsolation: true,
       nodeIntegration: false,

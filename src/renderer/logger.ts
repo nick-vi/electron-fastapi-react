@@ -67,7 +67,7 @@ export function debug(message: string, data?: unknown): void {
 
   addLogEntry(entry);
 
-  window.api.log("debug", message, data);
+  window.api.log(LogLevel.DEBUG, message, data);
 }
 
 /**
@@ -86,7 +86,7 @@ export function info(message: string, data?: unknown): void {
 
   addLogEntry(entry);
 
-  window.api.log("info", message, data);
+  window.api.log(LogLevel.INFO, message, data);
 }
 
 /**
@@ -105,7 +105,7 @@ export function warning(message: string, data?: unknown): void {
 
   addLogEntry(entry);
 
-  window.api.log("warning", message, data);
+  window.api.log(LogLevel.WARNING, message, data);
 }
 
 /**
@@ -126,7 +126,7 @@ export function error(message: string, error?: Error, data?: unknown): void {
 
   addLogEntry(entry);
 
-  window.api.log("error", message, data);
+  window.api.log(LogLevel.ERROR, message, data);
 }
 
 /**
@@ -155,16 +155,16 @@ export function clearLogs(): void {
  * @returns HTML string for the log entry
  */
 export function formatLogEntry(entry: LogEntry): string {
-  const timestamp = new Date(entry.timestamp as string).toLocaleTimeString();
+  const timestamp = new Date(String(entry.timestamp)).toLocaleTimeString();
   const levelColor = LOG_COLORS[entry.level] || "#000";
   const sourceColor = SOURCE_COLORS[entry.source] || "#000";
 
   let html = `
     <div class="log-entry log-level-${entry.level} log-source-${entry.source}">
       <span class="log-timestamp">${escapeHtml(timestamp)}</span>
-      <span class="log-level" style="color: ${levelColor}">${escapeHtml(entry.level.toUpperCase() as string)}</span>
-      <span class="log-source" style="color: ${sourceColor}">${escapeHtml(entry.source as string)}</span>
-      <span class="log-message">${escapeHtml(entry.message as string)}</span>
+      <span class="log-level" style="color: ${levelColor}">${escapeHtml(entry.level.toUpperCase())}</span>
+      <span class="log-source" style="color: ${sourceColor}">${escapeHtml(entry.source)}</span>
+      <span class="log-message">${escapeHtml(entry.message)}</span>
   `;
 
   if (entry.data) {
@@ -173,12 +173,12 @@ export function formatLogEntry(entry: LogEntry): string {
         typeof entry.data === "object" ? JSON.stringify(entry.data, null, 2) : String(entry.data);
       html += `<pre class="log-data">${escapeHtml(dataStr)}</pre>`;
     } catch (e) {
-      html += `<pre class="log-data">Unable to stringify data: ${escapeHtml(String(e))}</pre>`;
+      html += `<pre class="log-data">Unable to stringify data: ${escapeHtml(e)}</pre>`;
     }
   }
 
   if (entry.exception) {
-    html += `<pre class="log-exception">${escapeHtml(entry.exception as string)}</pre>`;
+    html += `<pre class="log-exception">${escapeHtml(entry.exception)}</pre>`;
   }
 
   html += "</div>";
@@ -190,9 +190,11 @@ export function formatLogEntry(entry: LogEntry): string {
  * @param text The text to escape
  * @returns Escaped HTML
  */
-function escapeHtml(text: string): string {
+function escapeHtml(text: unknown): string {
+  if (text === null || text === undefined) return "";
+  const str = String(text);
   const div = document.createElement("div");
-  div.textContent = text;
+  div.textContent = str;
   return div.innerHTML;
 }
 
