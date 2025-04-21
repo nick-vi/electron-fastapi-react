@@ -3,48 +3,46 @@
  * This module provides a standardized way to log messages and display logs from all sources.
  */
 
-// Define log levels
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-}
+export const LogLevel = {
+  DEBUG: 'debug',
+  INFO: 'info',
+  WARNING: 'warning',
+  ERROR: 'error',
+} as const;
 
-// Define log sources
-export enum LogSource {
-  MAIN = 'main',
-  RENDERER = 'renderer',
-  PYTHON = 'python',
-}
+export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
 
-// Define log entry interface
-export interface LogEntry {
+export const LogSource = {
+  MAIN: 'main',
+  RENDERER: 'renderer',
+  PYTHON: 'python',
+} as const;
+
+export type LogSource = (typeof LogSource)[keyof typeof LogSource];
+
+export type LogEntry = {
   timestamp: string;
   level: LogLevel;
   source: LogSource;
   message: string;
   data?: any;
   exception?: string;
-}
-
-// Store logs in memory
-const logs: LogEntry[] = [];
-const MAX_LOGS = 1000; // Maximum number of logs to keep in memory
-
-// Log level colors
-const LOG_COLORS = {
-  [LogLevel.DEBUG]: '#6c757d',    // Gray
-  [LogLevel.INFO]: '#0d6efd',     // Blue
-  [LogLevel.WARNING]: '#ffc107',  // Yellow
-  [LogLevel.ERROR]: '#dc3545',    // Red
 };
 
-// Source colors
+const logs: LogEntry[] = [];
+const MAX_LOGS = 1000;
+
+const LOG_COLORS = {
+  [LogLevel.DEBUG]: '#6c757d',
+  [LogLevel.INFO]: '#0d6efd',
+  [LogLevel.WARNING]: '#ffc107',
+  [LogLevel.ERROR]: '#dc3545',
+};
+
 const SOURCE_COLORS = {
-  [LogSource.MAIN]: '#6610f2',    // Purple
-  [LogSource.RENDERER]: '#fd7e14', // Orange
-  [LogSource.PYTHON]: '#20c997',  // Teal
+  [LogSource.MAIN]: '#6610f2',
+  [LogSource.RENDERER]: '#fd7e14',
+  [LogSource.PYTHON]: '#20c997',
 };
 
 /**
@@ -52,23 +50,20 @@ const SOURCE_COLORS = {
  * @param entry The log entry to add
  */
 export function addLogEntry(entry: LogEntry): void {
-  // Add timestamp if not provided
   if (!entry.timestamp) {
     entry.timestamp = new Date().toISOString();
   }
-  
-  // Add to in-memory logs
+
   logs.push(entry);
-  
-  // Trim logs if they exceed the maximum
+
   if (logs.length > MAX_LOGS) {
-    logs.shift(); // Remove the oldest log
+    logs.shift();
   }
-  
-  // Format log for console
-  const consoleMessage = `[${entry.timestamp}] [${entry.level.toUpperCase()}] [${entry.source}] ${entry.message}`;
-  
-  // Log to console based on level
+
+  const consoleMessage = `[${
+    entry.timestamp
+  }] [${entry.level.toUpperCase()}] [${entry.source}] ${entry.message}`;
+
   switch (entry.level) {
     case LogLevel.DEBUG:
       console.debug(consoleMessage, entry.data || '');
@@ -88,8 +83,7 @@ export function addLogEntry(entry: LogEntry): void {
     default:
       console.log(consoleMessage, entry.data || '');
   }
-  
-  // Update the UI if the log container exists
+
   updateLogUI();
 }
 
@@ -106,12 +100,10 @@ export function debug(message: string, data?: any): void {
     message,
     data,
   };
-  
-  // Add to local logs
+
   addLogEntry(entry);
-  
-  // Send to main process
-  window.api.log(LogLevel.DEBUG, message, data);
+
+  (window as any).api.log(LogLevel.DEBUG, message, data);
 }
 
 /**
@@ -127,12 +119,10 @@ export function info(message: string, data?: any): void {
     message,
     data,
   };
-  
-  // Add to local logs
+
   addLogEntry(entry);
-  
-  // Send to main process
-  window.api.log(LogLevel.INFO, message, data);
+
+  (window as any).api.log(LogLevel.INFO, message, data);
 }
 
 /**
@@ -148,12 +138,10 @@ export function warning(message: string, data?: any): void {
     message,
     data,
   };
-  
-  // Add to local logs
+
   addLogEntry(entry);
-  
-  // Send to main process
-  window.api.log(LogLevel.WARNING, message, data);
+
+  (window as any).api.log(LogLevel.WARNING, message, data);
 }
 
 /**
@@ -169,14 +157,14 @@ export function error(message: string, error?: Error, data?: any): void {
     source: LogSource.RENDERER,
     message,
     data,
-    exception: error ? `${error.name}: ${error.message}\n${error.stack}` : undefined,
+    exception: error
+      ? `${error.name}: ${error.message}\n${error.stack}`
+      : undefined,
   };
-  
-  // Add to local logs
+
   addLogEntry(entry);
-  
-  // Send to main process
-  window.api.log(LogLevel.ERROR, message, data);
+
+  (window as any).api.log(LogLevel.ERROR, message, data);
 }
 
 /**
@@ -193,11 +181,9 @@ export function getLogs(): LogEntry[] {
 export function clearLogs(): void {
   logs.length = 0;
   info('Logs cleared');
-  
-  // Clear logs in main process
-  window.api.clearLogs();
-  
-  // Update the UI
+
+  (window as any).api.clearLogs();
+
   updateLogUI();
 }
 
@@ -210,30 +196,33 @@ export function formatLogEntry(entry: LogEntry): string {
   const timestamp = new Date(entry.timestamp).toLocaleTimeString();
   const levelColor = LOG_COLORS[entry.level] || '#000';
   const sourceColor = SOURCE_COLORS[entry.source] || '#000';
-  
+
   let html = `
     <div class="log-entry log-level-${entry.level} log-source-${entry.source}">
       <span class="log-timestamp">${timestamp}</span>
       <span class="log-level" style="color: ${levelColor}">${entry.level.toUpperCase()}</span>
-      <span class="log-source" style="color: ${sourceColor}">${entry.source}</span>
+      <span class="log-source" style="color: ${sourceColor}">${
+    entry.source
+  }</span>
       <span class="log-message">${escapeHtml(entry.message)}</span>
   `;
-  
+
   if (entry.data) {
     try {
-      const dataStr = typeof entry.data === 'object' 
-        ? JSON.stringify(entry.data, null, 2)
-        : String(entry.data);
+      const dataStr =
+        typeof entry.data === 'object'
+          ? JSON.stringify(entry.data, null, 2)
+          : String(entry.data);
       html += `<pre class="log-data">${escapeHtml(dataStr)}</pre>`;
     } catch (e) {
       html += `<pre class="log-data">Unable to stringify data: ${e}</pre>`;
     }
   }
-  
+
   if (entry.exception) {
     html += `<pre class="log-exception">${escapeHtml(entry.exception)}</pre>`;
   }
-  
+
   html += '</div>';
   return html;
 }
@@ -255,15 +244,13 @@ function escapeHtml(text: string): string {
 export function updateLogUI(): void {
   const logContainer = document.getElementById('log-container');
   if (!logContainer) return;
-  
-  // Get the scroll position
-  const isScrolledToBottom = 
-    logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 1;
-  
-  // Update the log container
+
+  const isScrolledToBottom =
+    logContainer.scrollHeight - logContainer.clientHeight <=
+    logContainer.scrollTop + 1;
+
   logContainer.innerHTML = logs.map(formatLogEntry).join('');
-  
-  // Scroll to bottom if it was at the bottom before
+
   if (isScrolledToBottom) {
     logContainer.scrollTop = logContainer.scrollHeight;
   }
@@ -273,25 +260,21 @@ export function updateLogUI(): void {
  * Initialize the logger
  */
 export function initLogger(): void {
-  // Listen for log entries from the main process
-  window.api.onLogEntry((entry: LogEntry) => {
-    // Only add if it's not from the renderer (to avoid duplicates)
+  (window as any).api.onLogEntry((entry: LogEntry) => {
     if (entry.source !== LogSource.RENDERER) {
       addLogEntry(entry);
     }
   });
-  
-  // Get initial logs from main process
-  window.api.getLogs().then((mainLogs: LogEntry[]) => {
-    // Add all logs that aren't from the renderer
-    mainLogs.filter(log => log.source !== LogSource.RENDERER).forEach(addLogEntry);
+
+  (window as any).api.getLogs().then((mainLogs: LogEntry[]) => {
+    mainLogs
+      .filter((log) => log.source !== LogSource.RENDERER)
+      .forEach(addLogEntry);
   });
-  
-  // Log that the logger is initialized
+
   info('Renderer logger initialized');
 }
 
-// Export the logger as a default object
 export default {
   debug,
   info,

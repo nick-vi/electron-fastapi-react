@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { LogLevel, LogSource, LogEntry } from './main-logger';
+import type { LogLevel, LogEntry } from './main-logger';
+import { LogLevel as LogLevelValues } from './main-logger';
+import type { ElectronAPI } from './renderer';
 
 // Expose a limited API to the renderer process
 contextBridge.exposeInMainWorld('api', {

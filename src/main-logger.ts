@@ -8,43 +8,40 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
-// Define log levels
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-}
+export const LogLevel = {
+  DEBUG: 'debug',
+  INFO: 'info',
+  WARNING: 'warning',
+  ERROR: 'error',
+} as const;
 
-// Define log sources
-export enum LogSource {
-  MAIN = 'main',
-  RENDERER = 'renderer',
-  PYTHON = 'python',
-}
+export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
 
-// Define log entry interface
-export interface LogEntry {
+export const LogSource = {
+  MAIN: 'main',
+  RENDERER: 'renderer',
+  PYTHON: 'python',
+} as const;
+
+export type LogSource = (typeof LogSource)[keyof typeof LogSource];
+
+export type LogEntry = {
   timestamp: string;
   level: LogLevel;
   source: LogSource;
   message: string;
   data?: any;
   exception?: string;
-}
+};
 
-// Store logs in memory
 const logs: LogEntry[] = [];
-const MAX_LOGS = 1000; // Maximum number of logs to keep in memory
+const MAX_LOGS = 1000;
 
-// Get the __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Log file path
 const LOG_FILE_PATH = path.join(__dirname, '../logs/electron-fastapi.log');
 
-// Ensure log directory exists
 try {
   const logDir = path.dirname(LOG_FILE_PATH);
   if (!fs.existsSync(logDir)) {
@@ -59,23 +56,20 @@ try {
  * @param entry The log entry to add
  */
 export function addLogEntry(entry: LogEntry): void {
-  // Add timestamp if not provided
   if (!entry.timestamp) {
     entry.timestamp = new Date().toISOString();
   }
-  
-  // Add to in-memory logs
+
   logs.push(entry);
-  
-  // Trim logs if they exceed the maximum
+
   if (logs.length > MAX_LOGS) {
-    logs.shift(); // Remove the oldest log
+    logs.shift();
   }
-  
-  // Format log for console
-  const consoleMessage = `[${entry.timestamp}] [${entry.level.toUpperCase()}] [${entry.source}] ${entry.message}`;
-  
-  // Log to console based on level
+
+  const consoleMessage = `[${
+    entry.timestamp
+  }] [${entry.level.toUpperCase()}] [${entry.source}] ${entry.message}`;
+
   switch (entry.level) {
     case LogLevel.DEBUG:
       console.debug(consoleMessage, entry.data || '');
@@ -95,16 +89,14 @@ export function addLogEntry(entry: LogEntry): void {
     default:
       console.log(consoleMessage, entry.data || '');
   }
-  
-  // Write to file
+
   try {
     const logLine = JSON.stringify(entry) + '\n';
     fs.appendFileSync(LOG_FILE_PATH, logLine);
   } catch (error) {
     console.error('Failed to write to log file:', error);
   }
-  
-  // Notify renderer process of new log
+
   try {
     const mainWindow = global.mainWindow;
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -173,7 +165,9 @@ export function error(message: string, error?: Error, data?: any): void {
     source: LogSource.MAIN,
     message,
     data,
-    exception: error ? `${error.name}: ${error.message}\n${error.stack}` : undefined,
+    exception: error
+      ? `${error.name}: ${error.message}\n${error.stack}`
+      : undefined,
   });
 }
 
@@ -183,13 +177,11 @@ export function error(message: string, error?: Error, data?: any): void {
  * @returns True if the line was parsed as a log, false otherwise
  */
 export function parsePythonLog(line: string): boolean {
-  // Check if this is a JSON log from our custom logger
   if (line.startsWith('ELECTRON_LOG_JSON:')) {
     try {
       const jsonStr = line.substring('ELECTRON_LOG_JSON:'.length);
       const logData = JSON.parse(jsonStr);
-      
-      // Create a log entry from the parsed data
+
       const entry: LogEntry = {
         timestamp: logData.timestamp || new Date().toISOString(),
         level: (logData.level || 'info').toLowerCase() as LogLevel,
@@ -198,8 +190,7 @@ export function parsePythonLog(line: string): boolean {
         data: logData.data,
         exception: logData.exception,
       };
-      
-      // Add the log entry
+
       addLogEntry(entry);
       return true;
     } catch (err) {
@@ -207,8 +198,7 @@ export function parsePythonLog(line: string): boolean {
       return false;
     }
   }
-  
-  // If not a JSON log, treat as a regular log line
+
   if (line.trim()) {
     addLogEntry({
       timestamp: new Date().toISOString(),
@@ -218,7 +208,7 @@ export function parsePythonLog(line: string): boolean {
     });
     return true;
   }
-  
+
   return false;
 }
 
@@ -242,29 +232,28 @@ export function clearLogs(): void {
  * Set up IPC handlers for logging
  */
 export function setupLoggerIPC(): void {
-  // Handle log messages from renderer
-  ipcMain.handle('log', (event, level: LogLevel, message: string, data?: any) => {
-    addLogEntry({
-      timestamp: new Date().toISOString(),
-      level,
-      source: LogSource.RENDERER,
-      message,
-      data,
-    });
-  });
-  
-  // Handle requests for logs
+  ipcMain.handle(
+    'log',
+    (event, level: LogLevel, message: string, data?: any) => {
+      addLogEntry({
+        timestamp: new Date().toISOString(),
+        level,
+        source: LogSource.RENDERER,
+        message,
+        data,
+      });
+    }
+  );
+
   ipcMain.handle('get-logs', () => {
     return getLogs();
   });
-  
-  // Handle requests to clear logs
+
   ipcMain.handle('clear-logs', () => {
     clearLogs();
   });
 }
 
-// Export the logger as a default object
 export default {
   debug,
   info,
