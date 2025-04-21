@@ -206,7 +206,28 @@ pre {
   border: 3px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
   border-top-color: currentColor;
+}
+
+.api-status.loading .loading-spinner {
   animation: spin 1s ease-in-out infinite;
+}
+
+.api-status.ready .loading-spinner {
+  border-color: rgba(0, 0, 0, 0.1);
+  border-top-color: #155724;
+  border-right-color: #155724;
+  border-bottom-color: #155724;
+  border-left-color: #155724;
+  animation: none;
+}
+
+.api-status.error .loading-spinner {
+  border-color: rgba(0, 0, 0, 0.1);
+  border-top-color: #721c24;
+  border-right-color: #721c24;
+  border-bottom-color: #721c24;
+  border-left-color: #721c24;
+  animation: none;
 }
 
 @keyframes spin {

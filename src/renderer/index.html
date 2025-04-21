@@ -229,6 +229,17 @@
                 apiStatus.querySelector(".status-text").textContent =
                   `Error: API process exited with code ${exitCode}`;
 
+                // Replace the loading spinner with an X icon
+                const spinner = apiStatus.querySelector(".loading-spinner");
+                if (spinner) {
+                  spinner.innerHTML = "✕";
+                  spinner.style.display = "flex";
+                  spinner.style.justifyContent = "center";
+                  spinner.style.alignItems = "center";
+                  spinner.style.fontSize = "16px";
+                  spinner.style.fontWeight = "bold";
+                }
+
                 // Disable buttons
                 fetchButton.disabled = true;
                 fetchLogsButton.disabled = true;
@@ -248,6 +259,17 @@
                 apiStatus.classList.add("error");
                 apiStatus.querySelector(".status-text").textContent =
                   "Error: API failed to start in time";
+
+                // Replace the loading spinner with an X icon
+                const spinner = apiStatus.querySelector(".loading-spinner");
+                if (spinner) {
+                  spinner.innerHTML = "✕";
+                  spinner.style.display = "flex";
+                  spinner.style.justifyContent = "center";
+                  spinner.style.alignItems = "center";
+                  spinner.style.fontSize = "16px";
+                  spinner.style.fontWeight = "bold";
+                }
                 return;
               }
 
@@ -263,6 +285,17 @@
                   apiStatus.classList.remove("loading");
                   apiStatus.classList.add("ready");
                   apiStatus.querySelector(".status-text").textContent = "API sidecar is ready";
+
+                  // Replace the loading spinner with a checkmark icon
+                  const spinner = apiStatus.querySelector(".loading-spinner");
+                  if (spinner) {
+                    spinner.innerHTML = "✓";
+                    spinner.style.display = "flex";
+                    spinner.style.justifyContent = "center";
+                    spinner.style.alignItems = "center";
+                    spinner.style.fontSize = "16px";
+                    spinner.style.fontWeight = "bold";
+                  }
 
                   // Enable buttons
                   fetchButton.disabled = false;
@@ -284,6 +317,17 @@
             apiStatus.classList.remove("loading");
             apiStatus.classList.add("error");
             apiStatus.querySelector(".status-text").textContent = "Error: API not available";
+
+            // Replace the loading spinner with an X icon
+            const spinner = apiStatus.querySelector(".loading-spinner");
+            if (spinner) {
+              spinner.innerHTML = "✕";
+              spinner.style.display = "flex";
+              spinner.style.justifyContent = "center";
+              spinner.style.alignItems = "center";
+              spinner.style.fontSize = "16px";
+              spinner.style.fontWeight = "bold";
+            }
           }
         } catch (error) {
           console.error(`Error starting API sidecar: ${error.message}`);
@@ -294,6 +338,17 @@
           apiStatus.classList.remove("loading");
           apiStatus.classList.add("error");
           apiStatus.querySelector(".status-text").textContent = `Error: ${error.message}`;
+
+          // Replace the loading spinner with an X icon
+          const spinner = apiStatus.querySelector(".loading-spinner");
+          if (spinner) {
+            spinner.innerHTML = "✕";
+            spinner.style.display = "flex";
+            spinner.style.justifyContent = "center";
+            spinner.style.alignItems = "center";
+            spinner.style.fontSize = "16px";
+            spinner.style.fontWeight = "bold";
+          }
         }
       };
 
