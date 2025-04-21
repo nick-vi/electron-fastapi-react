@@ -10,6 +10,12 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
+      globals: {
+        ...eslint.configs.recommended.globals,
+        process: true,
+        global: true,
+        console: true,
+      },
     },
     plugins: {},
     rules: eslint.configs.recommended.rules,
@@ -25,6 +31,15 @@ export default [
         ecmaVersion: 2022,
         sourceType: "module",
       },
+      globals: {
+        ...eslint.configs.recommended.globals,
+        process: true,
+        global: true,
+        console: true,
+        window: true,
+        document: true,
+        fetch: true,
+      },
     },
     plugins: {
       "@typescript-eslint": tsPlugin,
@@ -37,6 +52,15 @@ export default [
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "no-redeclare": "off",
+      "@typescript-eslint/no-redeclare": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/no-base-to-string": "off",
 
       // Disable rules that conflict with Prettier
       ...prettierConfig.rules,

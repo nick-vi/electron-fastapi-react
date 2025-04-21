@@ -203,7 +203,7 @@ export function clearLogs(): void {
  * Set up IPC handlers for logging
  */
 export function setupLoggerIPC(): void {
-  ipcMain.handle("log", (event, level: LogLevel, message: string, data?: any) => {
+  ipcMain.handle("log", (event, level: LogLevel, message: string, data?: unknown) => {
     addLogEntry({
       timestamp: new Date().toISOString(),
       level,
