@@ -1,30 +1,55 @@
 #!/bin/bash
 
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m'
+
+# Emojis
+EMOJI_START="🚀"
+EMOJI_CHECK="✓"
+EMOJI_ERROR="❌"
+EMOJI_WARNING="⚠️"
+EMOJI_INFO="ℹ️"
+EMOJI_BUILD="🔨"
+EMOJI_PACKAGE="📦"
+EMOJI_CLEAN="🧹"
+EMOJI_DONE="✅"
+EMOJI_TIME="⏱️"
+EMOJI_SIZE="📊"
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
 error_exit() {
-    echo -e "${RED}Error: $1${NC}" >&2
+    echo -e "${EMOJI_ERROR} ${RED}Error: $1${NC}" >&2
     exit 1
 }
 
 success_message() {
-    echo -e "${GREEN}$1${NC}"
+    echo -e "${EMOJI_CHECK} ${GREEN}$1${NC}"
 }
 
 info_message() {
-    echo -e "${BLUE}$1${NC}"
+    echo -e "${EMOJI_INFO} ${BLUE}$1${NC}"
 }
 
 warning_message() {
-    echo -e "${YELLOW}$1${NC}"
+    echo -e "${EMOJI_WARNING} ${YELLOW}$1${NC}"
+}
+
+time_message() {
+    echo -e "${EMOJI_TIME} ${CYAN}$1${NC}"
+}
+
+size_message() {
+    echo -e "${EMOJI_SIZE} ${MAGENTA}$1${NC}"
 }
 
 check_requirements() {
@@ -67,6 +92,79 @@ calculate_python_hash() {
         cat api/pyproject.toml | md5sum | cut -d ' ' -f 1
     else
         echo "fastapi[standard] pyinstaller" | md5sum | cut -d ' ' -f 1
+    fi
+}
+
+# Format time in a human-readable format
+format_time() {
+    local ms=$1
+    if [ $ms -lt 1000 ]; then
+        echo "${ms}ms"
+    else
+        local seconds=$(echo "scale=2; $ms/1000" | bc)
+        if [ $(echo "$seconds < 60" | bc) -eq 1 ]; then
+            echo "${seconds}s"
+        else
+            local minutes=$(echo "$seconds/60" | bc)
+            local remaining_seconds=$(echo "scale=1; $seconds - $minutes*60" | bc)
+            echo "${minutes}m ${remaining_seconds}s"
+        fi
+    fi
+}
+
+# Format size in a human-readable format
+format_size() {
+    local bytes=$1
+    if [ $bytes -lt 1024 ]; then
+        echo "${bytes} B"
+    else
+        local kb=$(echo "scale=2; $bytes/1024" | bc)
+        if [ $(echo "$kb < 1024" | bc) -eq 1 ]; then
+            echo "${kb} KB"
+        else
+            local mb=$(echo "scale=2; $kb/1024" | bc)
+            if [ $(echo "$mb < 1024" | bc) -eq 1 ]; then
+                echo "${mb} MB"
+            else
+                local gb=$(echo "scale=2; $mb/1024" | bc)
+                echo "${gb} GB"
+            fi
+        fi
+    fi
+}
+
+# Get the size of a directory
+get_dir_size() {
+    local dir_path=$1
+    if [ -d "$dir_path" ]; then
+        local size=$(du -sb "$dir_path" | cut -f1)
+        echo $size
+    else
+        echo 0
+    fi
+}
+
+# Run a command and measure the time it takes
+run_timed_command() {
+    local command=$1
+    local description=$2
+    local emoji=$3
+
+    echo -e "\n${emoji} ${BOLD}${CYAN}${description}${NC}"
+    echo -e "${YELLOW}$ ${command}${NC}"
+
+    local start_time=$(date +%s%3N)
+    eval $command
+    local exit_code=$?
+    local end_time=$(date +%s%3N)
+    local time_taken=$((end_time - start_time))
+
+    if [ $exit_code -eq 0 ]; then
+        time_message "Completed in $(format_time $time_taken)"
+        return $time_taken
+    else
+        error_exit "Command failed with exit code $exit_code"
+        return 1
     fi
 }
 
@@ -159,8 +257,55 @@ build_fastapi() {
     fi
 }
 
+build_electron() {
+    echo -e "\n${EMOJI_START} ${BOLD}${MAGENTA}Starting build process for Electron FastAPI Sidecar${NC}"
+
+    # Get the version from package.json
+    local version=$(grep '"version":' package.json | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+    echo -e "${BOLD}Version:${NC} ${version}"
+
+    local start_time=$(date +%s%3N)
+    local total_time=0
+
+    # Clean up previous builds
+    run_timed_command "rm -rf dist dist-electron" "Cleaning previous builds" "${EMOJI_CLEAN}"
+    total_time=$?
+
+    # Build the Electron app with electron-vite
+    run_timed_command "pnpm run build:vite" "Building Electron app with electron-vite" "${EMOJI_BUILD}"
+    total_time=$((total_time + $?))
+
+    # Get the size of the dist-electron directory
+    local dist_electron_size=$(get_dir_size "dist-electron")
+    size_message "dist-electron size: $(format_size $dist_electron_size)"
+
+    # Build the installer with electron-builder
+    run_timed_command "pnpm run build:electron" "Building installer with electron-builder" "${EMOJI_PACKAGE}"
+    total_time=$((total_time + $?))
+
+    # Get the size of the dist directory
+    local dist_size=$(get_dir_size "dist")
+    size_message "dist size: $(format_size $dist_size)"
+
+    # Get the size of specific installers
+    if [ -d "dist" ]; then
+        for file in dist/*.dmg dist/*.exe dist/*.AppImage dist/*.deb; do
+            if [ -f "$file" ]; then
+                local file_size=$(stat -f%z "$file")
+                size_message "$(basename $file): $(format_size $file_size)"
+            fi
+        done
+    fi
+
+    local end_time=$(date +%s%3N)
+    local total_time_taken=$((end_time - start_time))
+
+    echo -e "\n${EMOJI_DONE} ${BOLD}${GREEN}Build completed successfully in $(format_time $total_time_taken)${NC}"
+    echo -e "${CYAN}Total build time: $(format_time $total_time)${NC}"
+}
+
 main() {
-    info_message "Starting setup for electron-fastapi-sidecar..."
+    echo -e "\n${EMOJI_START} ${BOLD}${MAGENTA}Starting setup for electron-fastapi-sidecar...${NC}"
 
     check_requirements
 
@@ -170,8 +315,15 @@ main() {
 
     build_fastapi
 
+    # Check if the build flag is passed
+    if [ "$1" == "--build" ]; then
+        build_electron
+    fi
+
     success_message "Setup completed successfully!"
-    info_message "You can now run the application with: pnpm start"
+    info_message "You can now run the application with: pnpm dev"
+    info_message "To build the application, run: pnpm build"
 }
 
-main
+# Pass all arguments to main
+main "$@"
