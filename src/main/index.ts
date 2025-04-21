@@ -5,6 +5,7 @@
 
 import { isDevelopment } from "@common/utils";
 import logger from "@main/logger";
+import { getFreePort } from "@main/network";
 import { ChildProcess, spawn } from "child_process";
 import { app, BrowserWindow, ipcMain } from "electron";
 import * as fs from "fs";
@@ -23,6 +24,7 @@ if (process.platform === "win32") {
 
 let apiProcess: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
+let apiPort: number | null = null;
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = path.dirname(currentFilePath);
@@ -30,80 +32,99 @@ const currentDirPath = path.dirname(currentFilePath);
 /**
  * Start the FastAPI sidecar process
  */
-const startApiSidecar = (): void => {
-  const appPath = app.getAppPath();
-
-  if (isDevelopment()) {
-    const pythonScript = path.join(appPath, "api", "run.py");
-
-    if (!fs.existsSync(pythonScript)) {
-      logger.error(`Python script not found at: ${pythonScript}`);
-      throw new Error(`Python script not found at: ${pythonScript}`);
+const startApiSidecar = async (): Promise<void> => {
+  try {
+    apiPort = await getFreePort();
+    if (!apiPort) {
+      throw new Error("Failed to get a free port");
     }
+    logger.info(`Using port ${apiPort} for API server`);
 
-    logger.info(`Starting Python script directly: ${pythonScript}`);
+    const appPath = app.getAppPath();
 
-    const uvCommand = process.platform === "win32" ? "uv" : "uv";
-    const apiDir = path.join(appPath, "api");
+    if (isDevelopment()) {
+      const pythonScript = path.join(appPath, "api", "run.py");
 
-    logger.info(
-      `Running command: ${uvCommand} run ${pythonScript} --reload --log-level debug --app-path ${appPath} in directory ${apiDir}`
-    );
+      if (!fs.existsSync(pythonScript)) {
+        logger.error(`Python script not found at: ${pythonScript}`);
+        throw new Error(`Python script not found at: ${pythonScript}`);
+      }
 
-    apiProcess = spawn(
-      uvCommand,
-      ["run", pythonScript, "--reload", "--log-level", "debug", "--app-path", appPath],
-      {
+      logger.info(`Starting Python script directly: ${pythonScript}`);
+
+      const uvCommand = process.platform === "win32" ? "uv" : "uv";
+      const apiDir = path.join(appPath, "api");
+
+      logger.info(
+        `Running command: ${uvCommand} run ${pythonScript} --app-path ${appPath} --port ${apiPort} --reload --log-level debug in directory ${apiDir}`
+      );
+
+      apiProcess = spawn(
+        uvCommand,
+        [
+          "run",
+          pythonScript,
+          "--app-path",
+          appPath,
+          "--port",
+          apiPort.toString(),
+          "--reload",
+          "--log-level",
+          "debug",
+        ],
+        {
+          cwd: apiDir,
+          env: {
+            ...process.env,
+            PYTHONPATH: apiDir,
+            ELECTRON_APP_PATH: appPath,
+          },
+        }
+      );
+    } else {
+      const resourcesPath = process.resourcesPath;
+      logger.info(`Resources path: ${resourcesPath}`);
+
+      const apiDir = path.join(resourcesPath, "api");
+      logger.info(`Using production API directory: ${apiDir}`);
+
+      if (!fs.existsSync(apiDir)) {
+        logger.error(`API directory not found at: ${apiDir}`);
+        throw new Error(`API directory not found at: ${apiDir}`);
+      }
+
+      const binaryName = process.platform === "win32" ? "api.exe" : "api";
+      const binaryPath = path.join(apiDir, binaryName);
+
+      if (!fs.existsSync(binaryPath)) {
+        logger.error(`API binary not found at: ${binaryPath}`);
+        throw new Error(`API binary not found at: ${binaryPath}`);
+      }
+
+      logger.info(`Running binary: ${binaryPath} with app path: ${appPath} and port: ${apiPort}`);
+
+      if (process.platform !== "win32") {
+        try {
+          fs.chmodSync(binaryPath, 0o755);
+        } catch (error) {
+          logger.warning(`Failed to set executable permissions on ${binaryPath}: ${error}`);
+        }
+      }
+
+      apiProcess = spawn(binaryPath, ["--app-path", appPath, "--port", apiPort.toString()], {
         cwd: apiDir,
         env: {
           ...process.env,
-          PYTHONPATH: apiDir,
           ELECTRON_APP_PATH: appPath,
         },
-      }
-    );
-  } else {
-    const resourcesPath = process.resourcesPath;
-    logger.info(`Resources path: ${resourcesPath}`);
-
-    const apiDir = path.join(resourcesPath, "api");
-    logger.info(`Using production API directory: ${apiDir}`);
-
-    if (!fs.existsSync(apiDir)) {
-      logger.error(`API directory not found at: ${apiDir}`);
-      throw new Error(`API directory not found at: ${apiDir}`);
+      });
     }
 
-    // In production, we use a binary
-    const binaryName = process.platform === "win32" ? "api.exe" : "api";
-    const binaryPath = path.join(apiDir, binaryName);
-
-    if (!fs.existsSync(binaryPath)) {
-      logger.error(`API binary not found at: ${binaryPath}`);
-      throw new Error(`API binary not found at: ${binaryPath}`);
-    }
-
-    logger.info(`Running binary: ${binaryPath} with app path: ${appPath}`);
-
-    // Make sure the binary is executable on non-Windows platforms
-    if (process.platform !== "win32") {
-      try {
-        fs.chmodSync(binaryPath, 0o755);
-      } catch (error) {
-        logger.warning(`Failed to set executable permissions on ${binaryPath}: ${error}`);
-      }
-    }
-
-    apiProcess = spawn(binaryPath, ["--app-path", appPath], {
-      cwd: apiDir,
-      env: {
-        ...process.env,
-        ELECTRON_APP_PATH: appPath,
-      },
-    });
+    setupApiProcessHandlers();
+  } catch (error) {
+    logger.error("Failed to start API sidecar", error as Error);
+    throw error;
   }
-
-  setupApiProcessHandlers();
 };
 
 /**
@@ -149,11 +170,14 @@ const setupApiProcessHandlers = (): void => {
 
   const checkApiHealth = async (): Promise<void> => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/health");
+      if (!apiPort) {
+        throw new Error("API port not set");
+      }
+      const response = await fetch(`http://127.0.0.1:${apiPort}/health`);
       if (response.ok) {
         logger.info("API is ready");
         if (mainWindow) {
-          mainWindow.webContents.send("api-ready");
+          mainWindow.webContents.send("api-ready", apiPort);
         }
         return;
       }
@@ -208,10 +232,14 @@ const createWindow = (): void => {
 const setupIPC = (): void => {
   logger.setupLoggerIPC();
 
-  ipcMain.handle("start-api-sidecar", () => {
+  ipcMain.handle("start-api-sidecar", async () => {
     logger.info("Starting API sidecar from renderer request");
-    startApiSidecar();
-    return true;
+    await startApiSidecar();
+    return apiPort;
+  });
+
+  ipcMain.handle("get-api-port", () => {
+    return apiPort;
   });
 };
 

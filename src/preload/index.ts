@@ -8,6 +8,8 @@ import type { LogEntry } from "@common/logger-types";
 import type { ElectronAPI } from "@common/renderer-api";
 import { contextBridge, ipcRenderer } from "electron";
 
+let apiPort: number | null = null;
+
 /**
  * Expose a limited API to the renderer process
  */
@@ -17,7 +19,10 @@ contextBridge.exposeInMainWorld("api", {
    */
   fetchData: async (): Promise<unknown> => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/");
+      if (!apiPort) {
+        throw new Error("API port not set");
+      }
+      const response = await fetch(`http://127.0.0.1:${apiPort}/`);
       return await response.json();
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -30,7 +35,10 @@ contextBridge.exposeInMainWorld("api", {
    */
   fetchLogs: async (): Promise<unknown> => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/logs");
+      if (!apiPort) {
+        throw new Error("API port not set");
+      }
+      const response = await fetch(`http://127.0.0.1:${apiPort}/logs`);
       return await response.json();
     } catch (error) {
       console.error("Error fetching logs:", error);
@@ -77,8 +85,13 @@ contextBridge.exposeInMainWorld("api", {
   /**
    * Start the API sidecar process
    */
-  startApiSidecar: async (): Promise<boolean> => {
-    return await ipcRenderer.invoke("start-api-sidecar");
+  startApiSidecar: async (): Promise<number> => {
+    const port = await ipcRenderer.invoke("start-api-sidecar");
+    if (port === null) {
+      throw new Error("Failed to start API sidecar: port is null");
+    }
+    apiPort = port;
+    return port;
   },
 
   /**
@@ -86,7 +99,10 @@ contextBridge.exposeInMainWorld("api", {
    */
   checkApiReady: async (): Promise<boolean> => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/health", {
+      if (!apiPort) {
+        return false;
+      }
+      const response = await fetch(`http://127.0.0.1:${apiPort}/health`, {
         method: "GET",
         headers: { Accept: "application/json" },
         signal: AbortSignal.timeout(500), // Timeout after 500ms
@@ -101,8 +117,11 @@ contextBridge.exposeInMainWorld("api", {
   /**
    * Listen for API ready event from main process
    */
-  onApiReady: (callback: () => void) => {
-    const listener = () => callback();
+  onApiReady: (callback: (port: number) => void) => {
+    const listener = (_event: unknown, port: number) => {
+      apiPort = port;
+      callback(port);
+    };
     ipcRenderer.on("api-ready", listener);
     return () => {
       ipcRenderer.removeListener("api-ready", listener);

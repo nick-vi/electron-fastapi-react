@@ -72,7 +72,7 @@
     ],
     "extraResources": [
       {
-        "from": "api/dist/api",
+        "from": "api/dist",
         "to": "api",
         "filter": [
           "**/*"
