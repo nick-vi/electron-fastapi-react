@@ -48,6 +48,7 @@
     "eslint": "^9.25.0",
     "eslint-config-prettier": "10.1.2",
     "eslint-define-config": "^2.1.0",
+    "glob": "^11.0.1",
     "node-fetch": "^3.3.2",
     "prettier": "3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
