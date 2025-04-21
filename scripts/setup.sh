@@ -317,6 +317,11 @@ setup_python() {
     VENV_PYTHON_VERSION=$($VENV_DIR/bin/python --version 2>&1)
     info_message "Virtual environment Python version: ${VENV_PYTHON_VERSION}"
 
+    # Install uv in the virtual environment
+    info_message "Installing uv in the virtual environment..."
+    $VENV_DIR/bin/pip install uv || error_exit "Failed to install uv in the virtual environment"
+    success_message "Installed uv in the virtual environment"
+
     # Install dependencies from pyproject.toml
     if [ -f "api/pyproject.toml" ]; then
         info_message "Installing dependencies from pyproject.toml using uv..."
