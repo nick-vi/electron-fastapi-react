@@ -3,14 +3,8 @@
  * This module provides a standardized way to log messages and display logs from all sources.
  */
 
-import {
-  LogLevel,
-  LogSource,
-  LogEntry,
-  LOG_COLORS,
-  SOURCE_COLORS,
-} from '../common/logger-types';
-import '../common/renderer-api';
+import { LOG_COLORS, LogEntry, LogLevel, LogSource, SOURCE_COLORS } from "../common/logger-types";
+import "../common/renderer-api";
 
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;
@@ -36,22 +30,22 @@ export function addLogEntry(entry: LogEntry): void {
 
   switch (entry.level) {
     case LogLevel.DEBUG:
-      console.debug(consoleMessage, entry.data || '');
+      console.debug(consoleMessage, entry.data || "");
       break;
     case LogLevel.INFO:
-      console.info(consoleMessage, entry.data || '');
+      console.info(consoleMessage, entry.data || "");
       break;
     case LogLevel.WARNING:
-      console.warn(consoleMessage, entry.data || '');
+      console.warn(consoleMessage, entry.data || "");
       break;
     case LogLevel.ERROR:
-      console.error(consoleMessage, entry.data || '');
+      console.error(consoleMessage, entry.data || "");
       if (entry.exception) {
         console.error(entry.exception);
       }
       break;
     default:
-      console.log(consoleMessage, entry.data || '');
+      console.log(consoleMessage, entry.data || "");
   }
 
   updateLogUI();
@@ -127,9 +121,7 @@ export function error(message: string, error?: Error, data?: any): void {
     source: LogSource.RENDERER,
     message,
     data,
-    exception: error
-      ? `${error.name}: ${error.message}\n${error.stack}`
-      : undefined,
+    exception: error ? `${error.name}: ${error.message}\n${error.stack}` : undefined,
   };
 
   addLogEntry(entry);
@@ -150,7 +142,7 @@ export function getLogs(): LogEntry[] {
  */
 export function clearLogs(): void {
   logs.length = 0;
-  info('Logs cleared');
+  info("Logs cleared");
 
   (window as any).api.clearLogs();
 
@@ -164,25 +156,21 @@ export function clearLogs(): void {
  */
 export function formatLogEntry(entry: LogEntry): string {
   const timestamp = new Date(entry.timestamp).toLocaleTimeString();
-  const levelColor = LOG_COLORS[entry.level] || '#000';
-  const sourceColor = SOURCE_COLORS[entry.source] || '#000';
+  const levelColor = LOG_COLORS[entry.level] || "#000";
+  const sourceColor = SOURCE_COLORS[entry.source] || "#000";
 
   let html = `
     <div class="log-entry log-level-${entry.level} log-source-${entry.source}">
       <span class="log-timestamp">${timestamp}</span>
       <span class="log-level" style="color: ${levelColor}">${entry.level.toUpperCase()}</span>
-      <span class="log-source" style="color: ${sourceColor}">${
-    entry.source
-  }</span>
+      <span class="log-source" style="color: ${sourceColor}">${entry.source}</span>
       <span class="log-message">${escapeHtml(entry.message)}</span>
   `;
 
   if (entry.data) {
     try {
       const dataStr =
-        typeof entry.data === 'object'
-          ? JSON.stringify(entry.data, null, 2)
-          : String(entry.data);
+        typeof entry.data === "object" ? JSON.stringify(entry.data, null, 2) : String(entry.data);
       html += `<pre class="log-data">${escapeHtml(dataStr)}</pre>`;
     } catch (e) {
       html += `<pre class="log-data">Unable to stringify data: ${e}</pre>`;
@@ -193,7 +181,7 @@ export function formatLogEntry(entry: LogEntry): string {
     html += `<pre class="log-exception">${escapeHtml(entry.exception)}</pre>`;
   }
 
-  html += '</div>';
+  html += "</div>";
   return html;
 }
 
@@ -203,7 +191,7 @@ export function formatLogEntry(entry: LogEntry): string {
  * @returns Escaped HTML
  */
 function escapeHtml(text: string): string {
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
@@ -212,14 +200,13 @@ function escapeHtml(text: string): string {
  * Update the log UI with the current logs
  */
 export function updateLogUI(): void {
-  const logContainer = document.getElementById('log-container');
+  const logContainer = document.getElementById("log-container");
   if (!logContainer) return;
 
   const isScrolledToBottom =
-    logContainer.scrollHeight - logContainer.clientHeight <=
-    logContainer.scrollTop + 1;
+    logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 1;
 
-  logContainer.innerHTML = logs.map(formatLogEntry).join('');
+  logContainer.innerHTML = logs.map(formatLogEntry).join("");
 
   if (isScrolledToBottom) {
     logContainer.scrollTop = logContainer.scrollHeight;
@@ -237,12 +224,10 @@ export function initLogger(): void {
   });
 
   (window as any).api.getLogs().then((mainLogs: LogEntry[]) => {
-    mainLogs
-      .filter((log) => log.source !== LogSource.RENDERER)
-      .forEach(addLogEntry);
+    mainLogs.filter((log) => log.source !== LogSource.RENDERER).forEach(addLogEntry);
   });
 
-  info('Renderer logger initialized');
+  info("Renderer logger initialized");
 }
 
 export default {

@@ -47,7 +47,9 @@
     "electron": "35.2.0",
     "eslint": "^9.25.0",
     "eslint-config-prettier": "10.1.2",
+    "eslint-define-config": "^2.1.0",
     "prettier": "3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
     "typescript": "^5.8.3"
   }
 }

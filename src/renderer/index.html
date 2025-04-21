@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -23,28 +23,16 @@
 
     <div class="container">
       <h2>Logs</h2>
-      <p>
-        This section shows logs from all components: Python, Main, and Renderer.
-      </p>
+      <p>This section shows logs from all components: Python, Main, and Renderer.</p>
 
       <div class="log-filters">
-        <label>
-          <input type="checkbox" id="filter-python" checked /> Python
-        </label>
+        <label> <input type="checkbox" id="filter-python" checked /> Python </label>
         <label> <input type="checkbox" id="filter-main" checked /> Main </label>
-        <label>
-          <input type="checkbox" id="filter-renderer" checked /> Renderer
-        </label>
-        <label>
-          <input type="checkbox" id="filter-debug" checked /> Debug
-        </label>
+        <label> <input type="checkbox" id="filter-renderer" checked /> Renderer </label>
+        <label> <input type="checkbox" id="filter-debug" checked /> Debug </label>
         <label> <input type="checkbox" id="filter-info" checked /> Info </label>
-        <label>
-          <input type="checkbox" id="filter-warning" checked /> Warning
-        </label>
-        <label>
-          <input type="checkbox" id="filter-error" checked /> Error
-        </label>
+        <label> <input type="checkbox" id="filter-warning" checked /> Warning </label>
+        <label> <input type="checkbox" id="filter-error" checked /> Error </label>
       </div>
 
       <div id="log-container" class="log-container"></div>
@@ -54,8 +42,8 @@
       // Initialize the logger
       const initializeLogger = () => {
         // Set up filter event listeners
-        document.querySelectorAll('.log-filters input').forEach((checkbox) => {
-          checkbox.addEventListener('change', updateLogFilters);
+        document.querySelectorAll(".log-filters input").forEach((checkbox) => {
+          checkbox.addEventListener("change", updateLogFilters);
         });
 
         // Listen for log entries from the main process
@@ -68,36 +56,36 @@
       const updateLogFilters = () => {
         const filters = {
           sources: {
-            python: document.getElementById('filter-python').checked,
-            main: document.getElementById('filter-main').checked,
-            renderer: document.getElementById('filter-renderer').checked,
+            python: document.getElementById("filter-python").checked,
+            main: document.getElementById("filter-main").checked,
+            renderer: document.getElementById("filter-renderer").checked,
           },
           levels: {
-            debug: document.getElementById('filter-debug').checked,
-            info: document.getElementById('filter-info').checked,
-            warning: document.getElementById('filter-warning').checked,
-            error: document.getElementById('filter-error').checked,
+            debug: document.getElementById("filter-debug").checked,
+            info: document.getElementById("filter-info").checked,
+            warning: document.getElementById("filter-warning").checked,
+            error: document.getElementById("filter-error").checked,
           },
         };
 
         // Apply filters to log entries
-        document.querySelectorAll('.log-entry').forEach((entry) => {
-          const source = entry.classList.contains('log-source-python')
-            ? 'python'
-            : entry.classList.contains('log-source-main')
-            ? 'main'
-            : 'renderer';
+        document.querySelectorAll(".log-entry").forEach((entry) => {
+          const source = entry.classList.contains("log-source-python")
+            ? "python"
+            : entry.classList.contains("log-source-main")
+              ? "main"
+              : "renderer";
 
-          const level = entry.classList.contains('log-level-debug')
-            ? 'debug'
-            : entry.classList.contains('log-level-info')
-            ? 'info'
-            : entry.classList.contains('log-level-warning')
-            ? 'warning'
-            : 'error';
+          const level = entry.classList.contains("log-level-debug")
+            ? "debug"
+            : entry.classList.contains("log-level-info")
+              ? "info"
+              : entry.classList.contains("log-level-warning")
+                ? "warning"
+                : "error";
 
           const visible = filters.sources[source] && filters.levels[level];
-          entry.style.display = visible ? 'block' : 'none';
+          entry.style.display = visible ? "block" : "none";
         });
       };
 
@@ -107,37 +95,33 @@
 
         // Define colors for log levels and sources
         const levelColors = {
-          debug: '#6c757d', // Gray
-          info: '#0d6efd', // Blue
-          warning: '#ffc107', // Yellow
-          error: '#dc3545', // Red
+          debug: "#6c757d", // Gray
+          info: "#0d6efd", // Blue
+          warning: "#ffc107", // Yellow
+          error: "#dc3545", // Red
         };
 
         const sourceColors = {
-          python: '#20c997', // Teal
-          main: '#6610f2', // Purple
-          renderer: '#fd7e14', // Orange
+          python: "#20c997", // Teal
+          main: "#6610f2", // Purple
+          renderer: "#fd7e14", // Orange
         };
 
-        const levelColor = levelColors[entry.level] || '#000';
-        const sourceColor = sourceColors[entry.source] || '#000';
+        const levelColor = levelColors[entry.level] || "#000";
+        const sourceColor = sourceColors[entry.source] || "#000";
 
         let html = `
-          <div class="log-entry log-level-${entry.level} log-source-${
-          entry.source
-        }">
+          <div class="log-entry log-level-${entry.level} log-source-${entry.source}">
             <span class="log-timestamp">${timestamp}</span>
             <span class="log-level" style="color: ${levelColor}">${entry.level.toUpperCase()}</span>
-            <span class="log-source" style="color: ${sourceColor}">${
-          entry.source
-        }</span>
+            <span class="log-source" style="color: ${sourceColor}">${entry.source}</span>
             <span class="log-message">${escapeHtml(entry.message)}</span>
         `;
 
         if (entry.data) {
           try {
             const dataStr =
-              typeof entry.data === 'object'
+              typeof entry.data === "object"
                 ? JSON.stringify(entry.data, null, 2)
                 : String(entry.data);
             html += `<pre class="log-data">${escapeHtml(dataStr)}</pre>`;
@@ -147,37 +131,34 @@
         }
 
         if (entry.exception) {
-          html += `<pre class="log-exception">${escapeHtml(
-            entry.exception
-          )}</pre>`;
+          html += `<pre class="log-exception">${escapeHtml(entry.exception)}</pre>`;
         }
 
-        html += '</div>';
+        html += "</div>";
         return html;
       };
 
       // Escape HTML special characters
       const escapeHtml = (text) => {
-        const div = document.createElement('div');
+        const div = document.createElement("div");
         div.textContent = text;
         return div.innerHTML;
       };
 
       // Update the log UI with the current logs
       const updateLogUI = async () => {
-        const logContainer = document.getElementById('log-container');
+        const logContainer = document.getElementById("log-container");
         if (!logContainer) return;
 
         // Get the scroll position
         const isScrolledToBottom =
-          logContainer.scrollHeight - logContainer.clientHeight <=
-          logContainer.scrollTop + 1;
+          logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 1;
 
         // Get logs from the main process
         const logs = await window.api.getLogs();
 
         // Update the log container
-        logContainer.innerHTML = logs.map(formatLogEntry).join('');
+        logContainer.innerHTML = logs.map(formatLogEntry).join("");
 
         // Apply filters
         updateLogFilters();
@@ -190,96 +171,79 @@
 
       // Log a message from the renderer
       const logFromRenderer = (level, message, data) => {
-        console.log(`Renderer log (${level}): ${message}`, data || '');
+        console.log(`Renderer log (${level}): ${message}`, data || "");
         window.api.log(level, message, data);
         updateLogUI();
       };
 
       // Initialize when the DOM is loaded
-      document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener("DOMContentLoaded", () => {
         initializeLogger();
         updateLogUI();
 
         // Log that the renderer is ready
-        logFromRenderer('info', 'Renderer initialized');
+        logFromRenderer("info", "Renderer initialized");
       });
 
       // Fetch data button event listener
-      document
-        .getElementById('fetchButton')
-        .addEventListener('click', async () => {
-          try {
-            logFromRenderer('info', 'Fetching data from FastAPI endpoint');
+      document.getElementById("fetchButton").addEventListener("click", async () => {
+        try {
+          logFromRenderer("info", "Fetching data from FastAPI endpoint");
 
-            const resultElement = document.getElementById('result');
-            resultElement.innerHTML = '<p>Loading...</p>';
+          const resultElement = document.getElementById("result");
+          resultElement.innerHTML = "<p>Loading...</p>";
 
-            // Call the fetchData function exposed by the preload script
-            const data = await window.api.fetchData();
+          // Call the fetchData function exposed by the preload script
+          const data = await window.api.fetchData();
 
-            // Log the result
-            logFromRenderer('info', 'Received data from FastAPI', data);
+          // Log the result
+          logFromRenderer("info", "Received data from FastAPI", data);
 
-            // Display the result
-            resultElement.innerHTML = `
+          // Display the result
+          resultElement.innerHTML = `
             <pre>${JSON.stringify(data, null, 2)}</pre>
           `;
-          } catch (error) {
-            logFromRenderer(
-              'error',
-              `Error fetching data: ${error.message || 'Unknown error'}`
-            );
+        } catch (error) {
+          logFromRenderer("error", `Error fetching data: ${error.message || "Unknown error"}`);
 
-            document.getElementById('result').innerHTML = `
-            <p class="error">Error: ${
-              error.message || 'Failed to fetch data'
-            }</p>
+          document.getElementById("result").innerHTML = `
+            <p class="error">Error: ${error.message || "Failed to fetch data"}</p>
           `;
-          }
-        });
+        }
+      });
 
       // Fetch logs button event listener
-      document
-        .getElementById('fetchLogsButton')
-        .addEventListener('click', async () => {
-          try {
-            logFromRenderer('info', 'Generating logs from FastAPI endpoint');
+      document.getElementById("fetchLogsButton").addEventListener("click", async () => {
+        try {
+          logFromRenderer("info", "Generating logs from FastAPI endpoint");
 
-            // Call the fetchLogs function exposed by the preload script
-            const data = await window.api.fetchLogs();
+          // Call the fetchLogs function exposed by the preload script
+          const data = await window.api.fetchLogs();
 
-            // Log the result
-            logFromRenderer('info', 'Received logs from FastAPI', data);
+          // Log the result
+          logFromRenderer("info", "Received logs from FastAPI", data);
 
-            // Update the log UI
-            updateLogUI();
-          } catch (error) {
-            logFromRenderer(
-              'error',
-              `Error generating logs: ${error.message || 'Unknown error'}`
-            );
-          }
-        });
+          // Update the log UI
+          updateLogUI();
+        } catch (error) {
+          logFromRenderer("error", `Error generating logs: ${error.message || "Unknown error"}`);
+        }
+      });
 
       // Clear logs button event listener
-      document
-        .getElementById('clearLogsButton')
-        .addEventListener('click', async () => {
-          try {
-            logFromRenderer('info', 'Clearing logs');
+      document.getElementById("clearLogsButton").addEventListener("click", async () => {
+        try {
+          logFromRenderer("info", "Clearing logs");
 
-            // Call the clearLogs function exposed by the preload script
-            await window.api.clearLogs();
+          // Call the clearLogs function exposed by the preload script
+          await window.api.clearLogs();
 
-            // Update the log UI
-            updateLogUI();
-          } catch (error) {
-            logFromRenderer(
-              'error',
-              `Error clearing logs: ${error.message || 'Unknown error'}`
-            );
-          }
-        });
+          // Update the log UI
+          updateLogUI();
+        } catch (error) {
+          logFromRenderer("error", `Error clearing logs: ${error.message || "Unknown error"}`);
+        }
+      });
     </script>
     <div class="footer">
       <p>&copy; 2025 Electron FastAPI Sidecar Demo</p>

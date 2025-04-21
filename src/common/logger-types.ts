@@ -2,41 +2,41 @@
  * Shared logger types and constants for both main and renderer processes.
  */
 
-export const LogLevel = {
-  DEBUG: 'debug',
-  INFO: 'info',
-  WARNING: 'warning',
-  ERROR: 'error',
+export const LogLevelValues = {
+  DEBUG: "debug",
+  INFO: "info",
+  WARNING: "warning",
+  ERROR: "error",
 } as const;
 
-export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
+export type LogLevel = (typeof LogLevelValues)[keyof typeof LogLevelValues];
 
-export const LogSource = {
-  MAIN: 'main',
-  RENDERER: 'renderer',
-  PYTHON: 'python',
+export const LogSourceValues = {
+  MAIN: "main",
+  RENDERER: "renderer",
+  PYTHON: "python",
 } as const;
 
-export type LogSource = (typeof LogSource)[keyof typeof LogSource];
+export type LogSource = (typeof LogSourceValues)[keyof typeof LogSourceValues];
 
 export type LogEntry = {
   timestamp: string;
   level: LogLevel;
   source: LogSource;
   message: string;
-  data?: any;
+  data?: unknown;
   exception?: string;
 };
 
 export const LOG_COLORS = {
-  [LogLevel.DEBUG]: '#6c757d',
-  [LogLevel.INFO]: '#0d6efd',
-  [LogLevel.WARNING]: '#ffc107',
-  [LogLevel.ERROR]: '#dc3545',
+  [LogLevelValues.DEBUG]: "#6c757d",
+  [LogLevelValues.INFO]: "#0d6efd",
+  [LogLevelValues.WARNING]: "#ffc107",
+  [LogLevelValues.ERROR]: "#dc3545",
 };
 
 export const SOURCE_COLORS = {
-  [LogSource.MAIN]: '#6610f2',
-  [LogSource.RENDERER]: '#fd7e14',
-  [LogSource.PYTHON]: '#20c997',
+  [LogSourceValues.MAIN]: "#6610f2",
+  [LogSourceValues.RENDERER]: "#fd7e14",
+  [LogSourceValues.PYTHON]: "#20c997",
 };

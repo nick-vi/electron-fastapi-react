@@ -1,7 +1,6 @@
 /* Base styles */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   margin: auto;
   max-width: 900px;
   padding: 2rem;
@@ -120,7 +119,7 @@ pre {
   cursor: pointer;
 }
 
-.log-filters input[type='checkbox'] {
+.log-filters input[type="checkbox"] {
   margin: 0;
 }
 

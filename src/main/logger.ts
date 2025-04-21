@@ -3,11 +3,11 @@
  * This module provides a standardized way to log messages and capture logs from the FastAPI process.
  */
 
-import { ipcMain } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-import { LogLevel, LogSource, LogEntry } from '../common/logger-types';
+import { ipcMain } from "electron";
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
+import { LogEntry, LogLevel, LogSource } from "../common/logger-types";
 
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;
@@ -15,7 +15,7 @@ const MAX_LOGS = 1000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const LOG_FILE_PATH = path.join(__dirname, '../../logs/electron-fastapi.log');
+const LOG_FILE_PATH = path.join(__dirname, "../../logs/electron-fastapi.log");
 
 try {
   const logDir = path.dirname(LOG_FILE_PATH);
@@ -23,7 +23,7 @@ try {
     fs.mkdirSync(logDir, { recursive: true });
   }
 } catch (error) {
-  console.error('Failed to create log directory:', error);
+  console.error("Failed to create log directory:", error);
 }
 
 /**
@@ -45,38 +45,38 @@ export function addLogEntry(entry: LogEntry): void {
 
   switch (entry.level) {
     case LogLevel.DEBUG:
-      console.debug(consoleMessage, entry.data || '');
+      console.debug(consoleMessage, entry.data || "");
       break;
     case LogLevel.INFO:
-      console.info(consoleMessage, entry.data || '');
+      console.info(consoleMessage, entry.data || "");
       break;
     case LogLevel.WARNING:
-      console.warn(consoleMessage, entry.data || '');
+      console.warn(consoleMessage, entry.data || "");
       break;
     case LogLevel.ERROR:
-      console.error(consoleMessage, entry.data || '');
+      console.error(consoleMessage, entry.data || "");
       if (entry.exception) {
         console.error(entry.exception);
       }
       break;
     default:
-      console.log(consoleMessage, entry.data || '');
+      console.log(consoleMessage, entry.data || "");
   }
 
   try {
-    const logLine = JSON.stringify(entry) + '\n';
+    const logLine = JSON.stringify(entry) + "\n";
     fs.appendFileSync(LOG_FILE_PATH, logLine);
   } catch (error) {
-    console.error('Failed to write to log file:', error);
+    console.error("Failed to write to log file:", error);
   }
 
   try {
     const mainWindow = global.mainWindow;
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('log-entry', entry);
+      mainWindow.webContents.send("log-entry", entry);
     }
   } catch (error) {
-    console.error('Failed to send log to renderer:', error);
+    console.error("Failed to send log to renderer:", error);
   }
 }
 
@@ -148,16 +148,16 @@ export function error(message: string, error?: Error, data?: any): void {
  * @returns True if the line was parsed as a log, false otherwise
  */
 export function parsePythonLog(line: string): boolean {
-  if (line.startsWith('ELECTRON_LOG_JSON:')) {
+  if (line.startsWith("ELECTRON_LOG_JSON:")) {
     try {
-      const jsonStr = line.substring('ELECTRON_LOG_JSON:'.length);
+      const jsonStr = line.substring("ELECTRON_LOG_JSON:".length);
       const logData = JSON.parse(jsonStr);
 
       const entry: LogEntry = {
         timestamp: logData.timestamp || new Date().toISOString(),
-        level: (logData.level || 'info').toLowerCase() as LogLevel,
+        level: (logData.level || "info").toLowerCase() as LogLevel,
         source: LogSource.PYTHON,
-        message: logData.message || '',
+        message: logData.message || "",
         data: logData.data,
         exception: logData.exception,
       };
@@ -165,7 +165,7 @@ export function parsePythonLog(line: string): boolean {
       addLogEntry(entry);
       return true;
     } catch (err) {
-      error('Failed to parse Python log JSON', err as Error);
+      error("Failed to parse Python log JSON", err as Error);
       return false;
     }
   }
@@ -196,31 +196,28 @@ export function getLogs(): LogEntry[] {
  */
 export function clearLogs(): void {
   logs.length = 0;
-  info('Logs cleared');
+  info("Logs cleared");
 }
 
 /**
  * Set up IPC handlers for logging
  */
 export function setupLoggerIPC(): void {
-  ipcMain.handle(
-    'log',
-    (event, level: LogLevel, message: string, data?: any) => {
-      addLogEntry({
-        timestamp: new Date().toISOString(),
-        level,
-        source: LogSource.RENDERER,
-        message,
-        data,
-      });
-    }
-  );
+  ipcMain.handle("log", (event, level: LogLevel, message: string, data?: any) => {
+    addLogEntry({
+      timestamp: new Date().toISOString(),
+      level,
+      source: LogSource.RENDERER,
+      message,
+      data,
+    });
+  });
 
-  ipcMain.handle('get-logs', () => {
+  ipcMain.handle("get-logs", () => {
     return getLogs();
   });
 
-  ipcMain.handle('clear-logs', () => {
+  ipcMain.handle("clear-logs", () => {
     clearLogs();
   });
 }

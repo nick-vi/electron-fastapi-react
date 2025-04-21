@@ -3,15 +3,15 @@
  * This is the entry point for the Electron application.
  */
 
-import { app, BrowserWindow } from 'electron';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-import { spawn, ChildProcess } from 'child_process';
-import * as fs from 'fs';
-import * as readline from 'readline';
+import { ChildProcess, spawn } from "child_process";
+import { app, BrowserWindow } from "electron";
+import * as fs from "fs";
+import * as path from "path";
+import * as readline from "readline";
+import { fileURLToPath } from "url";
 
 // Import our custom logger
-import logger from './logger';
+import logger from "./logger";
 
 // Make mainWindow accessible globally for the logger
 declare global {
@@ -19,7 +19,7 @@ declare global {
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (process.platform === 'win32') {
+if (process.platform === "win32") {
   app.setAppUserModelId(app.name);
 }
 
@@ -36,10 +36,10 @@ const getApiPath = (): string => {
   const appPath = app.getAppPath();
 
   // Determine the path based on the platform
-  if (process.platform === 'win32') {
-    return path.join(appPath, 'api', 'dist', 'api', 'api.exe');
+  if (process.platform === "win32") {
+    return path.join(appPath, "api", "dist", "api", "api.exe");
   } else {
-    return path.join(appPath, 'api', 'dist', 'api', 'api');
+    return path.join(appPath, "api", "dist", "api", "api");
   }
 };
 
@@ -53,12 +53,12 @@ const startApiSidecar = (): void => {
     logger.error(`API executable not found at: ${apiPath}`);
 
     // Try to run the Python script directly if the executable doesn't exist
-    const pythonScript = path.join(appPath, 'api', 'run.py');
+    const pythonScript = path.join(appPath, "api", "run.py");
     if (fs.existsSync(pythonScript)) {
       logger.info(`Trying to run Python script directly: ${pythonScript}`);
 
       // Find Python executable
-      const pythonExe = process.platform === 'win32' ? 'python' : 'python3';
+      const pythonExe = process.platform === "win32" ? "python" : "python3";
 
       // Start the Python process
       apiProcess = spawn(pythonExe, [pythonScript, appPath]);
@@ -66,7 +66,7 @@ const startApiSidecar = (): void => {
       return;
     }
 
-    logger.error('Could not find API executable or Python script');
+    logger.error("Could not find API executable or Python script");
     return;
   }
 
@@ -94,7 +94,7 @@ const setupApiProcessHandlers = (): void => {
   });
 
   // Handle stdout line by line
-  stdoutReader.on('line', (line) => {
+  stdoutReader.on("line", (line) => {
     // Try to parse as a log message
     if (!logger.parsePythonLog(line)) {
       // If not a structured log, log as regular info
@@ -103,7 +103,7 @@ const setupApiProcessHandlers = (): void => {
   });
 
   // Handle stderr line by line
-  stderrReader.on('line', (line) => {
+  stderrReader.on("line", (line) => {
     // Try to parse as a log message
     if (!logger.parsePythonLog(line)) {
       // If not a structured log, log as error
@@ -112,14 +112,14 @@ const setupApiProcessHandlers = (): void => {
   });
 
   // Handle process exit
-  apiProcess.on('close', (code) => {
+  apiProcess.on("close", (code) => {
     logger.info(`API process exited with code ${code}`);
     apiProcess = null;
   });
 
   // Handle process error
-  apiProcess.on('error', (err) => {
-    logger.error('API process error', err);
+  apiProcess.on("error", (err) => {
+    logger.error("API process error", err);
   });
 };
 
@@ -129,7 +129,7 @@ const createWindow = (): void => {
     width: 1000,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, "../preload/index.js"),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -139,19 +139,19 @@ const createWindow = (): void => {
   global.mainWindow = mainWindow;
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, '../../src/renderer/index.html'));
+  mainWindow.loadFile(path.join(__dirname, "../../src/renderer/index.html"));
 
   // Open the DevTools in development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     mainWindow.webContents.openDevTools();
   }
 
   // Log window creation
-  logger.info('Main window created');
+  logger.info("Main window created");
 
   // Handle window closed event
-  mainWindow.on('closed', () => {
-    logger.info('Main window closed');
+  mainWindow.on("closed", () => {
+    logger.info("Main window closed");
     mainWindow = null;
     global.mainWindow = null;
   });
@@ -168,7 +168,7 @@ const setupIPC = (): void => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Initialize logger
-  logger.info('Application starting', {
+  logger.info("Application starting", {
     version: app.getVersion(),
     platform: process.platform,
   });
@@ -182,11 +182,11 @@ app.whenReady().then(() => {
   // Create the main window
   createWindow();
 
-  app.on('activate', () => {
+  app.on("activate", () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      logger.info('Recreating window via activate event');
+      logger.info("Recreating window via activate event");
       createWindow();
     }
   });
@@ -195,35 +195,35 @@ app.whenReady().then(() => {
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  logger.info('All windows closed');
-  if (process.platform !== 'darwin') {
-    logger.info('Quitting application');
+app.on("window-all-closed", () => {
+  logger.info("All windows closed");
+  if (process.platform !== "darwin") {
+    logger.info("Quitting application");
     app.quit();
   }
 });
 
 // Kill the API process when the app is about to quit
-app.on('will-quit', () => {
-  logger.info('Application will quit');
+app.on("will-quit", () => {
+  logger.info("Application will quit");
   if (apiProcess) {
-    logger.info('Killing API process');
+    logger.info("Killing API process");
     apiProcess.kill();
     apiProcess = null;
   }
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught exception in main process', error);
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught exception in main process", error);
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason) => {
+process.on("unhandledRejection", (reason) => {
   logger.error(`Unhandled promise rejection: ${reason}`);
 });
 
 // Log application quit
-app.on('quit', () => {
-  logger.info('Application quit');
+app.on("quit", () => {
+  logger.info("Application quit");
 });
