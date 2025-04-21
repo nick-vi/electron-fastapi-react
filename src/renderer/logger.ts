@@ -56,7 +56,7 @@ export function addLogEntry(entry: LogEntry): void {
  * @param message The message to log
  * @param data Additional data to include in the log
  */
-export function debug(message: string, data?: any): void {
+export function debug(message: string, data?: unknown): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level: LogLevel.DEBUG,
@@ -67,7 +67,7 @@ export function debug(message: string, data?: any): void {
 
   addLogEntry(entry);
 
-  (window as any).api.log(LogLevel.DEBUG, message, data);
+  window.api.log(LogLevel.DEBUG, message, data);
 }
 
 /**
@@ -75,7 +75,7 @@ export function debug(message: string, data?: any): void {
  * @param message The message to log
  * @param data Additional data to include in the log
  */
-export function info(message: string, data?: any): void {
+export function info(message: string, data?: unknown): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level: LogLevel.INFO,
@@ -86,7 +86,7 @@ export function info(message: string, data?: any): void {
 
   addLogEntry(entry);
 
-  (window as any).api.log(LogLevel.INFO, message, data);
+  window.api.log(LogLevel.INFO, message, data);
 }
 
 /**
@@ -94,7 +94,7 @@ export function info(message: string, data?: any): void {
  * @param message The message to log
  * @param data Additional data to include in the log
  */
-export function warning(message: string, data?: any): void {
+export function warning(message: string, data?: unknown): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level: LogLevel.WARNING,
@@ -105,7 +105,7 @@ export function warning(message: string, data?: any): void {
 
   addLogEntry(entry);
 
-  (window as any).api.log(LogLevel.WARNING, message, data);
+  window.api.log(LogLevel.WARNING, message, data);
 }
 
 /**
@@ -114,7 +114,7 @@ export function warning(message: string, data?: any): void {
  * @param error Optional error object
  * @param data Additional data to include in the log
  */
-export function error(message: string, error?: Error, data?: any): void {
+export function error(message: string, error?: Error, data?: unknown): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level: LogLevel.ERROR,
@@ -126,7 +126,7 @@ export function error(message: string, error?: Error, data?: any): void {
 
   addLogEntry(entry);
 
-  (window as any).api.log(LogLevel.ERROR, message, data);
+  window.api.log(LogLevel.ERROR, message, data);
 }
 
 /**
@@ -144,7 +144,7 @@ export function clearLogs(): void {
   logs.length = 0;
   info("Logs cleared");
 
-  (window as any).api.clearLogs();
+  window.api.clearLogs();
 
   updateLogUI();
 }
@@ -217,13 +217,13 @@ export function updateLogUI(): void {
  * Initialize the logger
  */
 export function initLogger(): void {
-  (window as any).api.onLogEntry((entry: LogEntry) => {
+  window.api.onLogEntry((entry: LogEntry) => {
     if (entry.source !== LogSource.RENDERER) {
       addLogEntry(entry);
     }
   });
 
-  (window as any).api.getLogs().then((mainLogs: LogEntry[]) => {
+  window.api.getLogs().then((mainLogs: LogEntry[]) => {
     mainLogs.filter((log) => log.source !== LogSource.RENDERER).forEach(addLogEntry);
   });
 

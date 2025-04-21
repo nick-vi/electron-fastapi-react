@@ -10,7 +10,7 @@ import type { LogEntry, LogLevel } from "../common/logger-types";
 // Expose a limited API to the renderer process
 contextBridge.exposeInMainWorld("api", {
   // Function to fetch data from the FastAPI endpoint
-  fetchData: async (): Promise<any> => {
+  fetchData: async (): Promise<unknown> => {
     try {
       const response = await fetch("http://127.0.0.1:8000/");
       return await response.json();
@@ -21,7 +21,7 @@ contextBridge.exposeInMainWorld("api", {
   },
 
   // Function to fetch logs from the FastAPI endpoint
-  fetchLogs: async (): Promise<any> => {
+  fetchLogs: async (): Promise<unknown> => {
     try {
       const response = await fetch("http://127.0.0.1:8000/logs");
       return await response.json();
@@ -32,7 +32,7 @@ contextBridge.exposeInMainWorld("api", {
   },
 
   // Logging functions
-  log: (level: LogLevel, message: string, data?: any) => {
+  log: (level: LogLevel, message: string, data?: unknown) => {
     ipcRenderer.invoke("log", level, message, data);
   },
 
@@ -48,7 +48,7 @@ contextBridge.exposeInMainWorld("api", {
 
   // Listen for log entries
   onLogEntry: (callback: (entry: LogEntry) => void) => {
-    const listener = (_event: any, entry: LogEntry) => callback(entry);
+    const listener = (_event: unknown, entry: LogEntry) => callback(entry);
     ipcRenderer.on("log-entry", listener);
     return () => {
       ipcRenderer.removeListener("log-entry", listener);

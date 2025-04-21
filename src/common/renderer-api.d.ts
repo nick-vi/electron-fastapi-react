@@ -9,17 +9,17 @@ export type ElectronAPI = {
   /**
    * Fetch data from the FastAPI endpoint
    */
-  fetchData: () => Promise<any>;
+  fetchData: () => Promise<unknown>;
 
   /**
    * Fetch logs from the FastAPI endpoint
    */
-  fetchLogs: () => Promise<any>;
+  fetchLogs: () => Promise<unknown>;
 
   /**
    * Log a message to the main process
    */
-  log: (level: LogLevel, message: string, data?: any) => void;
+  log: (level: LogLevel, message: string, data?: unknown) => void;
 
   /**
    * Get logs from the main process

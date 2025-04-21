@@ -85,7 +85,7 @@ export function addLogEntry(entry: LogEntry): void {
  * @param message The message to log
  * @param data Additional data to include in the log
  */
-export function debug(message: string, data?: any): void {
+export function debug(message: string, data?: unknown): void {
   addLogEntry({
     timestamp: new Date().toISOString(),
     level: LogLevel.DEBUG,
@@ -100,7 +100,7 @@ export function debug(message: string, data?: any): void {
  * @param message The message to log
  * @param data Additional data to include in the log
  */
-export function info(message: string, data?: any): void {
+export function info(message: string, data?: unknown): void {
   addLogEntry({
     timestamp: new Date().toISOString(),
     level: LogLevel.INFO,
@@ -115,7 +115,7 @@ export function info(message: string, data?: any): void {
  * @param message The message to log
  * @param data Additional data to include in the log
  */
-export function warning(message: string, data?: any): void {
+export function warning(message: string, data?: unknown): void {
   addLogEntry({
     timestamp: new Date().toISOString(),
     level: LogLevel.WARNING,
@@ -131,7 +131,7 @@ export function warning(message: string, data?: any): void {
  * @param error Optional error object
  * @param data Additional data to include in the log
  */
-export function error(message: string, error?: Error, data?: any): void {
+export function error(message: string, error?: Error, data?: unknown): void {
   addLogEntry({
     timestamp: new Date().toISOString(),
     level: LogLevel.ERROR,
