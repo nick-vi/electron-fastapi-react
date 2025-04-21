@@ -60,18 +60,55 @@ const startApiSidecar = (): void => {
   } else {
     // In production mode, use the extraResources api directory
     const resourcesPath = process.resourcesPath;
-    const apiDir = path.join(resourcesPath, "api");
+    logger.info(`Resources path: ${resourcesPath}`);
 
-    // Check if the API directory exists
-    if (!fs.existsSync(apiDir)) {
-      logger.error(`API directory not found at: ${apiDir}`);
-      throw new Error(`API directory not found at: ${apiDir}`);
+    // Log all environment variables for debugging
+    logger.info(`App path: ${appPath}`);
+    logger.info(`Current directory: ${process.cwd()}`);
+    logger.info(`__dirname: ${__dirname}`);
+
+    // Try different possible locations for the API directory
+    const possibleApiDirs = [
+      path.join(resourcesPath, "api"),
+      path.join(appPath, "api"),
+      path.join(process.cwd(), "api"),
+      path.join(__dirname, "../../../api"),
+      path.join(resourcesPath, "app.asar.unpacked", "api"),
+    ];
+
+    let apiDir = "";
+    let apiDirFound = false;
+
+    // Check each possible location
+    for (const dir of possibleApiDirs) {
+      logger.info(`Checking for API directory at: ${dir}`);
+      if (fs.existsSync(dir)) {
+        apiDir = dir;
+        apiDirFound = true;
+        logger.info(`Found API directory at: ${apiDir}`);
+        break;
+      }
+    }
+
+    if (!apiDirFound) {
+      logger.error(`API directory not found in any of the checked locations`);
+      throw new Error(`API directory not found in any of the checked locations`);
     }
 
     // Check if main.py exists
     const mainPyPath = path.join(apiDir, "main.py");
     if (!fs.existsSync(mainPyPath)) {
       logger.error(`main.py not found at: ${mainPyPath}`);
+
+      // List files in the API directory for debugging
+      try {
+        const files = fs.readdirSync(apiDir);
+        logger.info(`Files in ${apiDir}: ${JSON.stringify(files)}`);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        logger.error(`Error listing files in ${apiDir}: ${errorMessage}`);
+      }
+
       throw new Error(`main.py not found at: ${mainPyPath}`);
     }
 
@@ -79,7 +116,6 @@ const startApiSidecar = (): void => {
     const pythonCommand = process.platform === "win32" ? "python" : "python3";
 
     logger.info(`Using production API directory: ${apiDir}`);
-    logger.info(`Resources path: ${resourcesPath}`);
     logger.info(`Running command: ${pythonCommand} -m uvicorn main:app in directory ${apiDir}`);
 
     // Start the process

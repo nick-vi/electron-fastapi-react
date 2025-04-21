@@ -21,7 +21,6 @@ app.add_middleware(
 )
 
 
-# Get the app path from the environment variable
 app_path = os.environ.get("ELECTRON_APP_PATH", "Unknown")
 if app_path != "Unknown":
     log_info(f"Application path set to: {app_path}")
@@ -76,7 +75,6 @@ async def get_logs() -> dict[str, Any]:
     log_error("This is an error log")
 
     try:
-        # Intentionally raise a ZeroDivisionError for testing
         result = 1 / 0
         log_info(f"Result: {result}")
     except Exception as e:

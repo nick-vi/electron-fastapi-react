@@ -7,10 +7,9 @@ import datetime
 import json
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 
-# Configure the root logger
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -32,11 +31,9 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
 
-        # Add exception info if available
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
 
-        # Add any extra attributes
         for key, value in record.__dict__.items():
             if key not in [
                 "args",
@@ -65,25 +62,23 @@ class JSONFormatter(logging.Formatter):
             ]:
                 log_data[key] = value
 
-        # Return JSON string with a special prefix that can be detected by the Electron main process
         return f"ELECTRON_LOG_JSON:{json.dumps(log_data)}"
 
 
-# Create a handler that writes to stdout
 stdout_handler = logging.StreamHandler(sys.stdout)
 stdout_handler.setFormatter(JSONFormatter())
 
-# Create the logger
+
 logger = logging.getLogger("api")
 logger.setLevel(logging.INFO)
 
-# Remove any existing handlers and add our custom handler
+
 for handler in logger.handlers[:]:
     logger.removeHandler(handler)
 logger.addHandler(stdout_handler)
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """
     Get a logger with the given name.
 
