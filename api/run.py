@@ -1,15 +1,17 @@
-import uvicorn
+from pathlib import Path
 import sys
-import os
-from typing import List, Optional
+
+import uvicorn
 
 # Import our custom logger
-from logger import get_logger, log_info, log_error, log_warning
+from logger import get_logger, log_error, log_info, log_warning
+
 
 # Create a logger for this module
 logger = get_logger("runner")
 
-def start_server(port: int = 8000, app_args: Optional[List[str]] = None) -> None:
+
+def start_server(port: int = 8000, app_args: list[str] | None = None) -> None:
     """
     Start the FastAPI server with the given port and arguments.
 
@@ -23,13 +25,16 @@ def start_server(port: int = 8000, app_args: Optional[List[str]] = None) -> None
 
     try:
         # Get the current working directory
-        cwd = os.getcwd()
+        cwd = Path.cwd()
         log_info(f"Current working directory: {cwd}")
 
         # Start the uvicorn server
-        uvicorn.run("main:app", host="127.0.0.1", port=port, reload=False, log_level="info")
+        uvicorn.run(
+            "main:app", host="127.0.0.1", port=port, reload=False, log_level="info"
+        )
     except Exception as e:
         log_error(f"Failed to start server: {str(e)}", exc_info=True)
+
 
 if __name__ == "__main__":
     # Get the port from command line arguments or use default

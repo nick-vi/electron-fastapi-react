@@ -63,30 +63,15 @@ check_requirements() {
 }
 
 calculate_python_hash() {
-    if [ -f "api/requirements.txt" ]; then
-        cat api/requirements.txt | md5sum | cut -d ' ' -f 1
+    if [ -f "api/pyproject.toml" ]; then
+        cat api/pyproject.toml | md5sum | cut -d ' ' -f 1
     else
-        echo "fastapi uvicorn pyinstaller" | md5sum | cut -d ' ' -f 1
+        echo "fastapi[standard] pyinstaller" | md5sum | cut -d ' ' -f 1
     fi
 }
 
 get_latest_versions() {
-    info_message "Checking for latest package versions..."
-
-
-    FASTAPI_VERSION="0.115.12"
-    UVICORN_VERSION="0.34.2"
-    PYINSTALLER_VERSION="6.13.0"
-
-
-    if command_exists uv; then
-    
-        FASTAPI_VERSION=$(uv pip search fastapi --no-cache 2>/dev/null | grep -m 1 "^fastapi " | awk '{print $2}' || echo "0.115.12")
-        UVICORN_VERSION=$(uv pip search uvicorn --no-cache 2>/dev/null | grep -m 1 "^uvicorn " | awk '{print $2}' || echo "0.34.2")
-        PYINSTALLER_VERSION=$(uv pip search pyinstaller --no-cache 2>/dev/null | grep -m 1 "^pyinstaller " | awk '{print $2}' || echo "6.13.0")
-    fi
-
-    success_message "Using package versions: FastAPI $FASTAPI_VERSION, Uvicorn $UVICORN_VERSION, PyInstaller $PYINSTALLER_VERSION"
+    info_message "Using dependencies from api/pyproject.toml"
 }
 
 setup_python() {
@@ -94,10 +79,14 @@ setup_python() {
 
     get_latest_versions
 
-    if [ ! -f "api/requirements.txt" ]; then
-        echo "fastapi==$FASTAPI_VERSION" > api/requirements.txt
-        echo "uvicorn==$UVICORN_VERSION" >> api/requirements.txt
-        echo "pyinstaller==$PYINSTALLER_VERSION" >> api/requirements.txt
+    # Make sure pyproject.toml exists
+    if [ ! -f "api/pyproject.toml" ]; then
+        warning_message "api/pyproject.toml not found, creating a minimal one"
+        mkdir -p api
+        echo '[project]' > api/pyproject.toml
+        echo 'name = "electron-fastapi-sidecar-api"' >> api/pyproject.toml
+        echo 'version = "0.1.0"' >> api/pyproject.toml
+        echo 'dependencies = ["fastapi[standard]", "pyinstaller"]' >> api/pyproject.toml
     fi
 
     PYTHON_HASH=$(calculate_python_hash)
@@ -107,15 +96,20 @@ setup_python() {
         success_message "Python dependencies are up to date."
     else
         info_message "Installing Python dependencies..."
-    
+
         if [ ! -d "api/venv" ]; then
             uv venv api/venv || error_exit "Failed to create virtual environment"
             success_message "Created virtual environment at api/venv"
         fi
-    
-        VIRTUAL_ENV=api/venv uv pip install -r api/requirements.txt || error_exit "Failed to install Python dependencies"
+
+        if [ -f "api/pyproject.toml" ]; then
+            cd api && VIRTUAL_ENV=venv uv pip install -e . || error_exit "Failed to install Python dependencies"
+            cd ..
+        else
+            VIRTUAL_ENV=api/venv uv pip install fastapi[standard] pyinstaller || error_exit "Failed to install Python dependencies"
+        fi
         success_message "Installed Python dependencies"
-    
+
         echo "$PYTHON_HASH" > "$HASH_FILE"
     fi
 }
@@ -136,7 +130,7 @@ generate_spec_file() {
 
     (cd api && ../api/venv/bin/pyi-makespec \
         --name api \
-        --add-data "../api/requirements.txt:./" \
+        --add-data "../api/pyproject.toml:./" \
         --hidden-import uvicorn.logging \
         --hidden-import uvicorn.protocols \
         --hidden-import uvicorn.protocols.http \

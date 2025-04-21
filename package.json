@@ -9,10 +9,12 @@
     "build": "tsc",
     "watch": "tsc -w",
     "start": "pnpm run build && electron-forge start",
-    "package": "pnpm run build && electron-forge package",
-    "make": "pnpm run build && electron-forge make",
-    "publish": "pnpm run build && electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:py": "cd api && uv run -m ruff check .",
+    "format:py": "cd api && uv run -m ruff format ."
   },
   "keywords": [],
   "author": {
@@ -37,9 +39,15 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.0",
     "@electron-forge/plugin-fuses": "^7.8.0",
     "@electron/fuses": "^1.8.0",
+    "@eslint/js": "^9.25.0",
     "@types/electron": "^1.6.12",
     "@types/node": "^22.14.1",
+    "@typescript-eslint/eslint-plugin": "^8.30.1",
+    "@typescript-eslint/parser": "^8.30.1",
     "electron": "35.2.0",
+    "eslint": "^9.25.0",
+    "eslint-config-prettier": "10.1.2",
+    "prettier": "3.5.3",
     "typescript": "^5.8.3"
   }
 }

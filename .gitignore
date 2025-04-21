@@ -103,3 +103,5 @@ api/venv/
 api/build/
 api/dist/
 api/*.egg-info/
+.venv/
+.ruff_cache/

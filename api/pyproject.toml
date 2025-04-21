@@ -1,0 +1,68 @@
+[project]
+name = "electron-fastapi-sidecar"
+version = "0.1.0"
+description = "An Electron application with a FastAPI sidecar"
+
+authors = [
+    {name = "nick-vi", email = "105120312+nick-vi@users.noreply.github.com"},
+]
+
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi[standard]>=0.115.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.9.10",
+]
+
+[tool.ruff]
+target-version = "py312"
+fix = true
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    "E",    # Pyflakes & PEP8 (flake8)
+    "F",    # Pyflakes (unused imports, undefined variables)
+    "I",    # isort (import sorting)
+    "UP",   # pyupgrade (modernizes syntax)
+    "PL",   # pylint rules
+    "N",    # PEP8 Naming conventions
+    "A",    # flake8-builtins
+    "B",    # flake8-bugbear
+    "C",    # complexity checks
+    "SIM",  # Simplifications (flake8-simplify)
+    "PTH",  # Pathlib usage (flake8-pathlib)
+]
+
+ignore = [
+    "E501",     # Line length (handled by formatter)
+    "PLR0913",  # Too many arguments in function definition (common in FastAPI)
+    "B008",     # Function calls in argument defaults (common in FastAPI with Depends)
+]
+
+exclude = [
+    ".venv",
+    "venv",
+    "node_modules",
+    "build",
+    "dist",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+lines-after-imports = 2
+force-sort-within-sections = true
+known-first-party = ["app"]

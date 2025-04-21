@@ -1,9 +1,11 @@
-from fastapi import FastAPI, Request
 import sys
-from typing import Dict, Any
+from typing import Any
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from logger import get_logger, log_info, log_error, log_warning
+from logger import get_logger, log_error, log_info, log_warning
+
 
 logger = get_logger("main")
 
@@ -11,7 +13,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,8 +27,9 @@ if len(sys.argv) > 1:
 else:
     log_warning("No application path provided in command line arguments")
 
+
 @app.get("/")
-async def read_root(request: Request) -> Dict[str, Any]:
+async def read_root(request: Request) -> dict[str, Any]:
     """
     Root endpoint that returns a hello world message and the app path.
 
@@ -47,8 +50,9 @@ async def read_root(request: Request) -> Dict[str, Any]:
     log_info("Sending response", data=response_data)
     return response_data
 
+
 @app.get("/logs")
-async def get_logs() -> Dict[str, Any]:
+async def get_logs() -> dict[str, Any]:
     """
     Endpoint to test logging at different levels.
 
@@ -60,12 +64,14 @@ async def get_logs() -> Dict[str, Any]:
     log_error("This is an error log")
 
     try:
-        1 / 0
+        # Intentionally raise a ZeroDivisionError for testing
+        result = 1 / 0
+        log_info(f"Result: {result}")
     except Exception as e:
         log_error(f"Caught an exception: {str(e)}", exc_info=True)
-        
+
     return {
         "message": "Logs generated",
         "levels": ["info", "warning", "error"],
-        "timestamp": sys.modules["datetime"].datetime.now().isoformat()
+        "timestamp": sys.modules["datetime"].datetime.now().isoformat(),
     }
