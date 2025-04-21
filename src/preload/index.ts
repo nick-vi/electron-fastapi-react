@@ -1,7 +1,12 @@
+/**
+ * Preload script for the Electron renderer process.
+ * This script runs in the renderer process before the web page is loaded.
+ * It has access to both Node.js and browser APIs.
+ */
+
 import { contextBridge, ipcRenderer } from 'electron';
-import type { LogLevel, LogEntry } from './main-logger';
-import { LogLevel as LogLevelValues } from './main-logger';
-import type { ElectronAPI } from './renderer';
+import type { LogLevel, LogEntry } from '../common/logger-types';
+import type { ElectronAPI } from '../common/renderer-api';
 
 // Expose a limited API to the renderer process
 contextBridge.exposeInMainWorld('api', {

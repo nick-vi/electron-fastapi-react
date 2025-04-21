@@ -1,4 +1,9 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+/**
+ * Main process for the Electron application.
+ * This is the entry point for the Electron application.
+ */
+
+import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn, ChildProcess } from 'child_process';
@@ -6,16 +11,12 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 
 // Import our custom logger
-import logger, { LogLevel, LogSource } from './main-logger';
+import logger from './logger';
 
 // Make mainWindow accessible globally for the logger
 declare global {
   var mainWindow: BrowserWindow | null;
 }
-
-// Get the __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (process.platform === 'win32') {
@@ -25,6 +26,10 @@ if (process.platform === 'win32') {
 // Reference to the FastAPI sidecar process
 let apiProcess: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
+
+// Get the __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path to the FastAPI executable
 const getApiPath = (): string => {
@@ -124,7 +129,7 @@ const createWindow = (): void => {
     width: 1000,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -134,7 +139,7 @@ const createWindow = (): void => {
   global.mainWindow = mainWindow;
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, '../src/index.html'));
+  mainWindow.loadFile(path.join(__dirname, '../../src/renderer/index.html'));
 
   // Open the DevTools in development
   if (process.env.NODE_ENV === 'development') {
@@ -156,8 +161,6 @@ const createWindow = (): void => {
 const setupIPC = (): void => {
   // Set up logger IPC handlers
   logger.setupLoggerIPC();
-
-  // Add any other IPC handlers here
 };
 
 // This method will be called when Electron has finished
@@ -216,7 +219,7 @@ process.on('uncaughtException', (error) => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   logger.error(`Unhandled promise rejection: ${reason}`);
 });
 

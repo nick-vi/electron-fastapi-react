@@ -3,47 +3,17 @@
  * This module provides a standardized way to log messages and display logs from all sources.
  */
 
-export const LogLevel = {
-  DEBUG: 'debug',
-  INFO: 'info',
-  WARNING: 'warning',
-  ERROR: 'error',
-} as const;
-
-export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
-
-export const LogSource = {
-  MAIN: 'main',
-  RENDERER: 'renderer',
-  PYTHON: 'python',
-} as const;
-
-export type LogSource = (typeof LogSource)[keyof typeof LogSource];
-
-export type LogEntry = {
-  timestamp: string;
-  level: LogLevel;
-  source: LogSource;
-  message: string;
-  data?: any;
-  exception?: string;
-};
+import {
+  LogLevel,
+  LogSource,
+  LogEntry,
+  LOG_COLORS,
+  SOURCE_COLORS,
+} from '../common/logger-types';
+import '../common/renderer-api';
 
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;
-
-const LOG_COLORS = {
-  [LogLevel.DEBUG]: '#6c757d',
-  [LogLevel.INFO]: '#0d6efd',
-  [LogLevel.WARNING]: '#ffc107',
-  [LogLevel.ERROR]: '#dc3545',
-};
-
-const SOURCE_COLORS = {
-  [LogSource.MAIN]: '#6610f2',
-  [LogSource.RENDERER]: '#fd7e14',
-  [LogSource.PYTHON]: '#20c997',
-};
 
 /**
  * Add a log entry to the in-memory log store

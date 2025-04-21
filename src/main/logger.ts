@@ -7,32 +7,7 @@ import { ipcMain } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-
-export const LogLevel = {
-  DEBUG: 'debug',
-  INFO: 'info',
-  WARNING: 'warning',
-  ERROR: 'error',
-} as const;
-
-export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
-
-export const LogSource = {
-  MAIN: 'main',
-  RENDERER: 'renderer',
-  PYTHON: 'python',
-} as const;
-
-export type LogSource = (typeof LogSource)[keyof typeof LogSource];
-
-export type LogEntry = {
-  timestamp: string;
-  level: LogLevel;
-  source: LogSource;
-  message: string;
-  data?: any;
-  exception?: string;
-};
+import { LogLevel, LogSource, LogEntry } from '../common/logger-types';
 
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;
@@ -40,7 +15,7 @@ const MAX_LOGS = 1000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const LOG_FILE_PATH = path.join(__dirname, '../logs/electron-fastapi.log');
+const LOG_FILE_PATH = path.join(__dirname, '../../logs/electron-fastapi.log');
 
 try {
   const logDir = path.dirname(LOG_FILE_PATH);
@@ -66,9 +41,7 @@ export function addLogEntry(entry: LogEntry): void {
     logs.shift();
   }
 
-  const consoleMessage = `[${
-    entry.timestamp
-  }] [${entry.level.toUpperCase()}] [${entry.source}] ${entry.message}`;
+  const consoleMessage = `[${entry.timestamp}] [${entry.level.toUpperCase()}] [${entry.source}] ${entry.message}`;
 
   switch (entry.level) {
     case LogLevel.DEBUG:
@@ -165,9 +138,7 @@ export function error(message: string, error?: Error, data?: any): void {
     source: LogSource.MAIN,
     message,
     data,
-    exception: error
-      ? `${error.name}: ${error.message}\n${error.stack}`
-      : undefined,
+    exception: error ? `${error.name}: ${error.message}\n${error.stack}` : undefined,
   });
 }
 

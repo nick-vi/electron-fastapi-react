@@ -3,7 +3,7 @@
   "productName": "electron-fastapi-sidecar",
   "version": "1.0.0",
   "description": "My Electron application description",
-  "main": "dist/index.js",
+  "main": "dist/main/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
