@@ -42,7 +42,7 @@ contextBridge.exposeInMainWorld("api", {
    * Log a message to the main process
    */
   log: (
-    level: ElectronAPI["log"] extends (level: infer L, ...args: any[]) => any ? L : never,
+    level: ElectronAPI["log"] extends (level: infer L, ...args: unknown[]) => unknown ? L : never,
     message: string,
     data?: unknown
   ) => {
@@ -93,6 +93,7 @@ contextBridge.exposeInMainWorld("api", {
       });
       return response.ok;
     } catch (error) {
+      console.error("Error checking API readiness:", error);
       return false;
     }
   },

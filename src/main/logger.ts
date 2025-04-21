@@ -171,7 +171,6 @@ export function parsePythonLog(line: string): boolean {
   }
 
   if (line.trim()) {
-    // Check if this is a Python traceback or error
     const isError =
       line.includes("Traceback (most recent call last)") ||
       line.includes("Error:") ||

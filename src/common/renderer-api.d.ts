@@ -38,7 +38,6 @@ export type ElectronAPI = {
 };
 
 declare global {
-  // Extend the Window interface
   interface Window {
     api: ElectronAPI;
   }

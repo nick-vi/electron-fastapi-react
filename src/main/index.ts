@@ -42,22 +42,19 @@ const startApiSidecar = (): void => {
 
     logger.info(`Starting Python script directly: ${pythonScript}`);
 
-    // Use uv to run the Python script with the correct environment
     const uvCommand = process.platform === "win32" ? "uv" : "uv";
     const apiDir = path.join(appPath, "api");
 
-    // Log the command we're about to run
     logger.info(
       `Running command: ${uvCommand} run -m uvicorn main:app --reload in directory ${apiDir}`
     );
 
-    // Use uv to run uvicorn directly
     apiProcess = spawn(uvCommand, ["run", "-m", "uvicorn", "main:app", "--reload"], {
-      cwd: apiDir, // Set the working directory to the API directory
+      cwd: apiDir,
       env: {
         ...process.env,
-        PYTHONPATH: apiDir, // Make sure Python can find the modules
-        ELECTRON_APP_PATH: appPath, // Pass the app path as an environment variable
+        PYTHONPATH: apiDir,
+        ELECTRON_APP_PATH: appPath,
       },
     });
   } else {
@@ -75,7 +72,7 @@ const startApiSidecar = (): void => {
     apiProcess = spawn(apiPath, [], {
       env: {
         ...process.env,
-        ELECTRON_APP_PATH: appPath, // Pass the app path as an environment variable
+        ELECTRON_APP_PATH: appPath,
       },
     });
   }
@@ -115,7 +112,6 @@ const setupApiProcessHandlers = (): void => {
     logger.info(`API process exited with code ${code}`);
     apiProcess = null;
 
-    // Notify the renderer that the API process has exited
     if (mainWindow) {
       mainWindow.webContents.send("api-process-exited", code);
     }
@@ -169,7 +165,6 @@ const createWindow = (): void => {
 const setupIPC = (): void => {
   logger.setupLoggerIPC();
 
-  // Add IPC handler for starting the API sidecar
   ipcMain.handle("start-api-sidecar", () => {
     logger.info("Starting API sidecar from renderer request");
     startApiSidecar();

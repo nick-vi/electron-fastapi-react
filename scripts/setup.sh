@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -10,7 +9,6 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# Emojis
 EMOJI_START="🚀"
 EMOJI_CHECK="✓"
 EMOJI_ERROR="❌"
@@ -95,7 +93,6 @@ calculate_python_hash() {
     fi
 }
 
-# Format time in a human-readable format
 format_time() {
     local ms=$1
     if [ "$ms" -lt 1000 ]; then
@@ -112,7 +109,6 @@ format_time() {
     fi
 }
 
-# Format size in a human-readable format
 format_size() {
     local bytes=$1
     if [ "$bytes" -lt 1024 ]; then
@@ -133,18 +129,16 @@ format_size() {
     fi
 }
 
-# Get the size of a directory
 get_dir_size() {
     local dir_path=$1
     if [ -d "$dir_path" ]; then
         local size=$(du -sk "$dir_path" | cut -f1)
-        echo $((size * 1024))  # Convert KB to bytes
+        echo $((size * 1024)) 
     else
         echo 0
     fi
 }
 
-# Run a command and measure the time it takes
 run_timed_command() {
     local command=$1
     local description=$2
@@ -177,7 +171,7 @@ setup_python() {
 
     get_latest_versions
 
-    # Make sure pyproject.toml exists
+
     if [ ! -f "api/pyproject.toml" ]; then
         warning_message "api/pyproject.toml not found, creating a minimal one"
         mkdir -p api
@@ -210,6 +204,14 @@ setup_python() {
 
         echo "$PYTHON_HASH" > "$HASH_FILE"
     fi
+
+
+    if [ ! -f "api/.venv/bin/pyinstaller" ]; then
+        info_message "Installing PyInstaller..."
+        cd api && VIRTUAL_ENV=venv uv pip install pyinstaller || error_exit "Failed to install PyInstaller"
+        cd ..
+        success_message "Installed PyInstaller"
+    fi
 }
 
 setup_node() {
@@ -226,9 +228,9 @@ setup_node() {
 generate_spec_file() {
     info_message "Generating PyInstaller spec file..."
 
-    (cd api && ../api/.venv/bin/pyi-makespec \
+    (cd api && .venv/bin/pyi-makespec \
         --name api \
-        --add-data "../api/pyproject.toml:./" \
+        --add-data "pyproject.toml:./" \
         --hidden-import uvicorn.logging \
         --hidden-import uvicorn.protocols \
         --hidden-import uvicorn.protocols.http \
@@ -252,7 +254,7 @@ build_fastapi() {
         if [ ! -f "api/api.spec" ]; then
             generate_spec_file
         fi
-        (cd api && ../api/.venv/bin/pyinstaller api.spec) || error_exit "Failed to build FastAPI application"
+        (cd api && .venv/bin/pyinstaller api.spec) || error_exit "Failed to build FastAPI application"
         success_message "Built FastAPI application"
     fi
 }
@@ -260,34 +262,27 @@ build_fastapi() {
 build_electron() {
     echo -e "\n${EMOJI_START} ${BOLD}${MAGENTA}Starting build process for Electron FastAPI Sidecar${NC}"
 
-    # Get the version from package.json
     local version=$(grep '"version":' package.json | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
     echo -e "${BOLD}Version:${NC} ${version}"
 
-    local start_time=$(date +%s%3N)
+    local start_time=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", time * 1000')
     local total_time=0
 
-    # Clean up previous builds
     run_timed_command "rm -rf dist dist-electron" "Cleaning previous builds" "${EMOJI_CLEAN}"
     total_time=$?
 
-    # Build the Electron app with electron-vite
     run_timed_command "pnpm run build:vite" "Building Electron app with electron-vite" "${EMOJI_BUILD}"
     total_time=$((total_time + $?))
 
-    # Get the size of the dist-electron directory
     local dist_electron_size=$(get_dir_size "dist-electron")
     size_message "dist-electron size: $(format_size $dist_electron_size)"
 
-    # Build the installer with electron-builder
     run_timed_command "pnpm run build:electron" "Building installer with electron-builder" "${EMOJI_PACKAGE}"
     total_time=$((total_time + $?))
 
-    # Get the size of the dist directory
     local dist_size=$(get_dir_size "dist")
     size_message "dist size: $(format_size $dist_size)"
 
-    # Get the size of specific installers
     if [ -d "dist" ]; then
         for file in dist/*.dmg dist/*.exe dist/*.AppImage dist/*.deb; do
             if [ -f "$file" ]; then
@@ -297,7 +292,7 @@ build_electron() {
         done
     fi
 
-    local end_time=$(date +%s%3N)
+    local end_time=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", time * 1000')
     local total_time_taken=$((end_time - start_time))
 
     echo -e "\n${EMOJI_DONE} ${BOLD}${GREEN}Build completed successfully in $(format_time $total_time_taken)${NC}"
@@ -315,15 +310,9 @@ main() {
 
     build_fastapi
 
-    # Check if the build flag is passed
     if [ "$1" == "--build" ]; then
         build_electron
     fi
-
-    success_message "Setup completed successfully!"
-    info_message "You can now run the application with: pnpm dev"
-    info_message "To build the application, run: pnpm build"
 }
 
-# Pass all arguments to main
 main "$@"
