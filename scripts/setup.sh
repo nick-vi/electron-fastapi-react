@@ -98,14 +98,14 @@ calculate_python_hash() {
 # Format time in a human-readable format
 format_time() {
     local ms=$1
-    if [ $ms -lt 1000 ]; then
+    if [ "$ms" -lt 1000 ]; then
         echo "${ms}ms"
     else
         local seconds=$(echo "scale=2; $ms/1000" | bc)
         if [ $(echo "$seconds < 60" | bc) -eq 1 ]; then
             echo "${seconds}s"
         else
-            local minutes=$(echo "$seconds/60" | bc)
+            local minutes=$(echo "scale=0; $seconds/60" | bc)
             local remaining_seconds=$(echo "scale=1; $seconds - $minutes*60" | bc)
             echo "${minutes}m ${remaining_seconds}s"
         fi
@@ -115,7 +115,7 @@ format_time() {
 # Format size in a human-readable format
 format_size() {
     local bytes=$1
-    if [ $bytes -lt 1024 ]; then
+    if [ "$bytes" -lt 1024 ]; then
         echo "${bytes} B"
     else
         local kb=$(echo "scale=2; $bytes/1024" | bc)
@@ -137,8 +137,8 @@ format_size() {
 get_dir_size() {
     local dir_path=$1
     if [ -d "$dir_path" ]; then
-        local size=$(du -sb "$dir_path" | cut -f1)
-        echo $size
+        local size=$(du -sk "$dir_path" | cut -f1)
+        echo $((size * 1024))  # Convert KB to bytes
     else
         echo 0
     fi
@@ -153,10 +153,10 @@ run_timed_command() {
     echo -e "\n${emoji} ${BOLD}${CYAN}${description}${NC}"
     echo -e "${YELLOW}$ ${command}${NC}"
 
-    local start_time=$(date +%s%3N)
+    local start_time=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", time * 1000')
     eval $command
     local exit_code=$?
-    local end_time=$(date +%s%3N)
+    local end_time=$(perl -MTime::HiRes=time -e 'printf "%.0f\n", time * 1000')
     local time_taken=$((end_time - start_time))
 
     if [ $exit_code -eq 0 ]; then
@@ -195,16 +195,16 @@ setup_python() {
     else
         info_message "Installing Python dependencies..."
 
-        if [ ! -d "api/venv" ]; then
-            uv venv api/venv || error_exit "Failed to create virtual environment"
-            success_message "Created virtual environment at api/venv"
+        if [ ! -d "api/.venv" ]; then
+            uv venv api/.venv || error_exit "Failed to create virtual environment"
+            success_message "Created virtual environment at api/.venv"
         fi
 
         if [ -f "api/pyproject.toml" ]; then
             cd api && VIRTUAL_ENV=venv uv pip install -e . || error_exit "Failed to install Python dependencies"
             cd ..
         else
-            VIRTUAL_ENV=api/venv uv pip install fastapi[standard] pyinstaller || error_exit "Failed to install Python dependencies"
+            VIRTUAL_ENV=api/.venv uv pip install fastapi[standard] pyinstaller || error_exit "Failed to install Python dependencies"
         fi
         success_message "Installed Python dependencies"
 
@@ -226,7 +226,7 @@ setup_node() {
 generate_spec_file() {
     info_message "Generating PyInstaller spec file..."
 
-    (cd api && ../api/venv/bin/pyi-makespec \
+    (cd api && ../api/.venv/bin/pyi-makespec \
         --name api \
         --add-data "../api/pyproject.toml:./" \
         --hidden-import uvicorn.logging \
@@ -252,7 +252,7 @@ build_fastapi() {
         if [ ! -f "api/api.spec" ]; then
             generate_spec_file
         fi
-        (cd api && ../api/venv/bin/pyinstaller api.spec) || error_exit "Failed to build FastAPI application"
+        (cd api && ../api/.venv/bin/pyinstaller api.spec) || error_exit "Failed to build FastAPI application"
         success_message "Built FastAPI application"
     fi
 }

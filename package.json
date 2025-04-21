@@ -19,8 +19,8 @@
     "lint:py": "cd api && uv run -m ruff check .",
     "format:py": "cd api && uv run -m ruff format .",
     "setup": "./scripts/setup.sh",
-    "setup:py": "cd api && uv pip install -e .",
-    "postinstall": "npm run setup:py"
+    "setup:py": "cd api && uv pip install -r requirements.txt",
+    "clean": "rm -rf dist dist-electron api/dist api/build api/__pycache__ api/**/__pycache__ api/.ruff_cache api/**/.ruff_cache api/.mypy_cache api/**/.mypy_cache api/electron_fastapi_sidecar.egg-info"
   },
   "keywords": [],
   "author": {
