@@ -3,11 +3,11 @@
  * This module provides a standardized way to log messages and capture logs from the FastAPI process.
  */
 
+import { LogEntry, LogLevel, LogSource } from "@common/logger-types";
 import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { LogEntry, LogLevel, LogSource } from "../common/logger-types";
 
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;

@@ -3,8 +3,8 @@
  * This module provides a standardized way to log messages and display logs from all sources.
  */
 
-import { LOG_COLORS, LogEntry, LogLevel, LogSource, SOURCE_COLORS } from "../common/logger-types";
-import "../common/renderer-api";
+import { LOG_COLORS, LogEntry, LogLevel, LogSource, SOURCE_COLORS } from "@common/logger-types";
+import "@common/renderer-api";
 
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;

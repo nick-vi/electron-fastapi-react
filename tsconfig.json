@@ -2,10 +2,10 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "strict": true,
-    "outDir": "./dist",
+    "outDir": "./dist-electron",
     "sourceMap": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
@@ -16,7 +16,16 @@
     "noImplicitThis": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["node", "electron"]
+    "types": ["node", "electron"],
+    "isolatedModules": true,
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@common/*": ["src/common/*"],
+      "@main/*": ["src/main/*"],
+      "@renderer/*": ["src/renderer/*"],
+      "@preload/*": ["src/preload/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
