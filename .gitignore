@@ -106,4 +106,4 @@ api/dist/
 api/*.egg-info/
 .venv/
 .ruff_cache/
-.deps_hash
+.build-cache

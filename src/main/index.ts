@@ -8,6 +8,7 @@ import logger from "@main/logger";
 import { ChildProcess, spawn } from "child_process";
 import { app, BrowserWindow, ipcMain } from "electron";
 import * as fs from "fs";
+import fetch from "node-fetch";
 import * as path from "path";
 import * as readline from "readline";
 import { fileURLToPath } from "url";
@@ -46,85 +47,58 @@ const startApiSidecar = (): void => {
     const apiDir = path.join(appPath, "api");
 
     logger.info(
-      `Running command: ${uvCommand} run -m uvicorn main:app --reload in directory ${apiDir}`
+      `Running command: ${uvCommand} run ${pythonScript} --reload --log-level debug --app-path ${appPath} in directory ${apiDir}`
     );
 
-    apiProcess = spawn(uvCommand, ["run", "-m", "uvicorn", "main:app", "--reload"], {
-      cwd: apiDir,
-      env: {
-        ...process.env,
-        PYTHONPATH: apiDir,
-        ELECTRON_APP_PATH: appPath,
-      },
-    });
+    apiProcess = spawn(
+      uvCommand,
+      ["run", pythonScript, "--reload", "--log-level", "debug", "--app-path", appPath],
+      {
+        cwd: apiDir,
+        env: {
+          ...process.env,
+          PYTHONPATH: apiDir,
+          ELECTRON_APP_PATH: appPath,
+        },
+      }
+    );
   } else {
-    // In production mode, use the extraResources api directory
     const resourcesPath = process.resourcesPath;
     logger.info(`Resources path: ${resourcesPath}`);
 
-    // Log all environment variables for debugging
-    logger.info(`App path: ${appPath}`);
-    logger.info(`Current directory: ${process.cwd()}`);
-    logger.info(`__dirname: ${__dirname}`);
-
-    // Try different possible locations for the API directory
-    const possibleApiDirs = [
-      path.join(resourcesPath, "api"),
-      path.join(appPath, "api"),
-      path.join(process.cwd(), "api"),
-      path.join(__dirname, "../../../api"),
-      path.join(resourcesPath, "app.asar.unpacked", "api"),
-    ];
-
-    let apiDir = "";
-    let apiDirFound = false;
-
-    // Check each possible location
-    for (const dir of possibleApiDirs) {
-      logger.info(`Checking for API directory at: ${dir}`);
-      if (fs.existsSync(dir)) {
-        apiDir = dir;
-        apiDirFound = true;
-        logger.info(`Found API directory at: ${apiDir}`);
-        break;
-      }
-    }
-
-    if (!apiDirFound) {
-      logger.error(`API directory not found in any of the checked locations`);
-      throw new Error(`API directory not found in any of the checked locations`);
-    }
-
-    // Check if main.py exists
-    const mainPyPath = path.join(apiDir, "main.py");
-    if (!fs.existsSync(mainPyPath)) {
-      logger.error(`main.py not found at: ${mainPyPath}`);
-
-      // List files in the API directory for debugging
-      try {
-        const files = fs.readdirSync(apiDir);
-        logger.info(`Files in ${apiDir}: ${JSON.stringify(files)}`);
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        logger.error(`Error listing files in ${apiDir}: ${errorMessage}`);
-      }
-
-      throw new Error(`main.py not found at: ${mainPyPath}`);
-    }
-
-    // In production, we'll use python/python3 directly
-    const pythonCommand = process.platform === "win32" ? "python" : "python3";
-
+    const apiDir = path.join(resourcesPath, "api");
     logger.info(`Using production API directory: ${apiDir}`);
-    logger.info(`Running command: ${pythonCommand} -m uvicorn main:app in directory ${apiDir}`);
 
-    // Start the process
-    apiProcess = spawn(pythonCommand, ["-m", "uvicorn", "main:app"], {
-      cwd: apiDir, // Set the working directory to the API directory
+    if (!fs.existsSync(apiDir)) {
+      logger.error(`API directory not found at: ${apiDir}`);
+      throw new Error(`API directory not found at: ${apiDir}`);
+    }
+
+    // In production, we use a binary
+    const binaryName = process.platform === "win32" ? "api.exe" : "api";
+    const binaryPath = path.join(apiDir, binaryName);
+
+    if (!fs.existsSync(binaryPath)) {
+      logger.error(`API binary not found at: ${binaryPath}`);
+      throw new Error(`API binary not found at: ${binaryPath}`);
+    }
+
+    logger.info(`Running binary: ${binaryPath} with app path: ${appPath}`);
+
+    // Make sure the binary is executable on non-Windows platforms
+    if (process.platform !== "win32") {
+      try {
+        fs.chmodSync(binaryPath, 0o755);
+      } catch (error) {
+        logger.warning(`Failed to set executable permissions on ${binaryPath}: ${error}`);
+      }
+    }
+
+    apiProcess = spawn(binaryPath, ["--app-path", appPath], {
+      cwd: apiDir,
       env: {
         ...process.env,
-        PYTHONPATH: apiDir, // Make sure Python can find the modules
-        ELECTRON_APP_PATH: appPath, // Pass the app path as an environment variable
+        ELECTRON_APP_PATH: appPath,
       },
     });
   }
@@ -172,6 +146,23 @@ const setupApiProcessHandlers = (): void => {
   apiProcess.on("error", (err) => {
     logger.error("API process error", err);
   });
+
+  const checkApiHealth = async (): Promise<void> => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/health");
+      if (response.ok) {
+        logger.info("API is ready");
+        if (mainWindow) {
+          mainWindow.webContents.send("api-ready");
+        }
+        return;
+      }
+    } catch {
+      global.setTimeout(() => void checkApiHealth(), 500);
+    }
+  };
+
+  global.setTimeout(() => void checkApiHealth(), 1000);
 };
 
 /**

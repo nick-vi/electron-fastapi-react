@@ -67,7 +67,4 @@ exclude = [
 combine-as-imports = true
 lines-after-imports = 2
 force-sort-within-sections = true
-known-first-party = ["app"]
-
-[tool.setuptools]
-packages = ["app"]
+known-first-party = ["api"]

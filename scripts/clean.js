@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { rmSync, existsSync } from "fs";
+import { existsSync, rmSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -8,7 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, "..");
 
-console.log("🧹 Cleaning build artifacts...");
+const isHardClean = process.argv.includes("--hard");
+
+console.log(`🧹 Cleaning build artifacts${isHardClean ? " (hard clean)" : ""}...`);
 
 const dirsToClean = [
   "dist",
@@ -16,7 +18,9 @@ const dirsToClean = [
   "api/dist",
   "api/build",
   "api/__pycache__",
-  "node_modules/.vite"
+  "node_modules/.vite",
+  "api/.deps_hash",
+  ...(isHardClean ? ["node_modules", "api/.venv"] : []),
 ];
 
 let cleaned = 0;

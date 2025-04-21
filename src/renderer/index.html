@@ -246,69 +246,33 @@
               });
             }
 
-            // Poll the API health endpoint until it's ready or times out
-            let attempts = 0;
-            const maxAttempts = 30; // 15 seconds max wait time
-            const checkInterval = 500; // Check every 500ms
+            // Listen for API ready event from main process
+            if (window.api.onApiReady) {
+              window.api.onApiReady(() => {
+                // API is ready
+                logFromRenderer("info", "API sidecar is ready");
 
-            const checkApiHealth = async () => {
-              if (attempts >= maxAttempts) {
-                // Timeout after max attempts
-                logFromRenderer("error", "API sidecar failed to start in time");
+                // Update UI to show API is ready
                 apiStatus.classList.remove("loading");
-                apiStatus.classList.add("error");
-                apiStatus.querySelector(".status-text").textContent =
-                  "Error: API failed to start in time";
+                apiStatus.classList.add("ready");
+                apiStatus.querySelector(".status-text").textContent = "API sidecar is ready";
 
-                // Replace the loading spinner with an X icon
+                // Replace the loading spinner with a checkmark icon
                 const spinner = apiStatus.querySelector(".loading-spinner");
                 if (spinner) {
-                  spinner.innerHTML = "✕";
+                  spinner.innerHTML = "✓";
                   spinner.style.display = "flex";
                   spinner.style.justifyContent = "center";
                   spinner.style.alignItems = "center";
                   spinner.style.fontSize = "16px";
                   spinner.style.fontWeight = "bold";
                 }
-                return;
-              }
 
-              attempts++;
-
-              if (window.api.checkApiReady) {
-                const isReady = await window.api.checkApiReady();
-                if (isReady) {
-                  // API is ready
-                  logFromRenderer("info", "API sidecar is ready");
-
-                  // Update UI to show API is ready
-                  apiStatus.classList.remove("loading");
-                  apiStatus.classList.add("ready");
-                  apiStatus.querySelector(".status-text").textContent = "API sidecar is ready";
-
-                  // Replace the loading spinner with a checkmark icon
-                  const spinner = apiStatus.querySelector(".loading-spinner");
-                  if (spinner) {
-                    spinner.innerHTML = "✓";
-                    spinner.style.display = "flex";
-                    spinner.style.justifyContent = "center";
-                    spinner.style.alignItems = "center";
-                    spinner.style.fontSize = "16px";
-                    spinner.style.fontWeight = "bold";
-                  }
-
-                  // Enable buttons
-                  fetchButton.disabled = false;
-                  fetchLogsButton.disabled = false;
-                } else {
-                  // API not ready yet, try again
-                  setTimeout(checkApiHealth, checkInterval);
-                }
-              }
-            };
-
-            // Start checking API health
-            setTimeout(checkApiHealth, checkInterval);
+                // Enable buttons
+                fetchButton.disabled = false;
+                fetchLogsButton.disabled = false;
+              });
+            }
           } else {
             console.error("API not available for starting sidecar");
             logFromRenderer("error", "API not available for starting sidecar");

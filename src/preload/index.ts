@@ -99,6 +99,17 @@ contextBridge.exposeInMainWorld("api", {
   },
 
   /**
+   * Listen for API ready event from main process
+   */
+  onApiReady: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("api-ready", listener);
+    return () => {
+      ipcRenderer.removeListener("api-ready", listener);
+    };
+  },
+
+  /**
    * Listen for API process exit events
    */
   onApiProcessExit: (callback: (exitCode: number) => void) => {

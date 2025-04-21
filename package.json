@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "electron-vite dev",
-    "setup": "node scripts/setup.js",
+    "dev-setup": "node scripts/setup.js",
     "build": "node scripts/build.js",
     "build:mac": "cross-env PLATFORM=mac node scripts/build.js",
     "build:win": "cross-env PLATFORM=win node scripts/build.js",
@@ -21,7 +21,8 @@
     "format:check": "prettier --check .",
     "lint:py": "cd api && uv run -m ruff check .",
     "format:py": "cd api && uv run -m ruff format .",
-    "clean": "node scripts/clean.js"
+    "clean": "node scripts/clean.js",
+    "clean:hard": "node scripts/clean.js --hard"
   },
   "keywords": [],
   "author": {
@@ -54,26 +55,20 @@
     "vite": "^6.3.2"
   },
   "build": {
-    "appId": "com.electron.fastapi-sidecar",
+    "appId": "com.electron-fastapi-sidecar.app",
     "productName": "Electron FastAPI Sidecar",
     "directories": {
       "output": "dist"
     },
     "files": [
-      "dist-electron",
-      "dist"
+      "dist/**/*"
     ],
     "extraResources": [
       {
-        "from": "api",
+        "from": "api/dist/api",
         "to": "api",
         "filter": [
-          "**/*",
-          "!**/__pycache__",
-          "!**/.venv",
-          "!**/venv",
-          "!**/.mypy_cache",
-          "!**/.ruff_cache"
+          "**/*"
         ]
       }
     ],
