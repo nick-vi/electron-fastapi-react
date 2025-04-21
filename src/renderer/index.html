@@ -215,16 +215,67 @@
           if (window.api && window.api.startApiSidecar) {
             logFromRenderer("info", "Starting API sidecar...");
             await window.api.startApiSidecar();
-            logFromRenderer("info", "API sidecar started successfully");
+            logFromRenderer("info", "API sidecar process started");
 
-            // Update UI to show API is ready
-            apiStatus.classList.remove("loading");
-            apiStatus.classList.add("ready");
-            apiStatus.querySelector(".status-text").textContent = "API sidecar is ready";
+            // Set up API process exit handler
+            if (window.api.onApiProcessExit) {
+              window.api.onApiProcessExit((exitCode) => {
+                logFromRenderer("error", `API process exited with code ${exitCode}`);
 
-            // Enable buttons
-            fetchButton.disabled = false;
-            fetchLogsButton.disabled = false;
+                // Update UI to show error
+                apiStatus.classList.remove("loading");
+                apiStatus.classList.remove("ready");
+                apiStatus.classList.add("error");
+                apiStatus.querySelector(".status-text").textContent =
+                  `Error: API process exited with code ${exitCode}`;
+
+                // Disable buttons
+                fetchButton.disabled = true;
+                fetchLogsButton.disabled = true;
+              });
+            }
+
+            // Poll the API health endpoint until it's ready or times out
+            let attempts = 0;
+            const maxAttempts = 30; // 15 seconds max wait time
+            const checkInterval = 500; // Check every 500ms
+
+            const checkApiHealth = async () => {
+              if (attempts >= maxAttempts) {
+                // Timeout after max attempts
+                logFromRenderer("error", "API sidecar failed to start in time");
+                apiStatus.classList.remove("loading");
+                apiStatus.classList.add("error");
+                apiStatus.querySelector(".status-text").textContent =
+                  "Error: API failed to start in time";
+                return;
+              }
+
+              attempts++;
+
+              if (window.api.checkApiReady) {
+                const isReady = await window.api.checkApiReady();
+                if (isReady) {
+                  // API is ready
+                  logFromRenderer("info", "API sidecar is ready");
+
+                  // Update UI to show API is ready
+                  apiStatus.classList.remove("loading");
+                  apiStatus.classList.add("ready");
+                  apiStatus.querySelector(".status-text").textContent = "API sidecar is ready";
+
+                  // Enable buttons
+                  fetchButton.disabled = false;
+                  fetchLogsButton.disabled = false;
+                } else {
+                  // API not ready yet, try again
+                  setTimeout(checkApiHealth, checkInterval);
+                }
+              }
+            };
+
+            // Start checking API health
+            setTimeout(checkApiHealth, checkInterval);
           } else {
             console.error("API not available for starting sidecar");
             logFromRenderer("error", "API not available for starting sidecar");

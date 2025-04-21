@@ -80,4 +80,31 @@ contextBridge.exposeInMainWorld("api", {
   startApiSidecar: async (): Promise<boolean> => {
     return await ipcRenderer.invoke("start-api-sidecar");
   },
+
+  /**
+   * Check if the API is ready by calling the health endpoint
+   */
+  checkApiReady: async (): Promise<boolean> => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/health", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(500), // Timeout after 500ms
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  /**
+   * Listen for API process exit events
+   */
+  onApiProcessExit: (callback: (exitCode: number) => void) => {
+    const listener = (_event: unknown, exitCode: number) => callback(exitCode);
+    ipcRenderer.on("api-process-exited", listener);
+    return () => {
+      ipcRenderer.removeListener("api-process-exited", listener);
+    };
+  },
 });

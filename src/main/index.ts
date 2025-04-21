@@ -108,6 +108,11 @@ const setupApiProcessHandlers = (): void => {
   apiProcess.on("close", (code) => {
     logger.info(`API process exited with code ${code}`);
     apiProcess = null;
+
+    // Notify the renderer that the API process has exited
+    if (mainWindow) {
+      mainWindow.webContents.send("api-process-exited", code);
+    }
   });
 
   apiProcess.on("error", (err) => {

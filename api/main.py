@@ -51,6 +51,17 @@ async def read_root(request: Request) -> dict[str, Any]:
     return response_data
 
 
+@app.get("/health")
+async def health_check() -> dict[str, str]:
+    """
+    Health check endpoint to verify the API is running.
+
+    Returns:
+        Dict[str, str]: A status message
+    """
+    return {"status": "ok"}
+
+
 @app.get("/logs")
 async def get_logs() -> dict[str, Any]:
     """
