@@ -23,8 +23,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint:py": "cd api && uv run -m ruff check .",
-    "format:py": "cd api && uv run -m ruff format .",
+    "lint:py": "cd api && .venv/bin/python -m ruff check .",
+    "format:py": "cd api && .venv/bin/python -m ruff format .",
     "clean": "node scripts/clean.js",
     "clean:hard": "node scripts/clean.js --hard"
   },

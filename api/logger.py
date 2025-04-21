@@ -7,7 +7,7 @@ import datetime
 import json
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 
 logging.basicConfig(
@@ -78,7 +78,7 @@ for handler in logger.handlers[:]:
 logger.addHandler(stdout_handler)
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """
     Get a logger with the given name.
 

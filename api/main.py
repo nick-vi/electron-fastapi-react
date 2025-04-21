@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Any, Dict, Dict
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,7 +29,7 @@ else:
 
 
 @app.get("/")
-async def read_root(request: Request) -> Dict[str, Any]:
+async def read_root(request: Request) -> dict[str, Any]:
     """
     Root endpoint that returns a hello world message and the app path.
 
@@ -52,7 +52,7 @@ async def read_root(request: Request) -> Dict[str, Any]:
 
 
 @app.get("/health")
-async def health_check() -> Dict[str, str]:
+async def health_check() -> dict[str, str]:
     """
     Health check endpoint to verify the API is running.
 
@@ -63,7 +63,7 @@ async def health_check() -> Dict[str, str]:
 
 
 @app.get("/logs")
-async def get_logs() -> Dict[str, Any]:
+async def get_logs() -> dict[str, Any]:
     """
     Endpoint to test logging at different levels.
 
