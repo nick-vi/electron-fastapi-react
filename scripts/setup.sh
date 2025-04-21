@@ -25,6 +25,139 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+get_os() {
+    case "$(uname -s)" in
+        Darwin*) echo "macos" ;;
+        Linux*) echo "linux" ;;
+        MINGW*|MSYS*|CYGWIN*) echo "windows" ;;
+        *) echo "unknown" ;;
+    esac
+}
+
+install_homebrew() {
+    info_message "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || error_exit "Failed to install Homebrew"
+    success_message "Homebrew installed successfully"
+}
+
+install_chocolatey() {
+    info_message "Installing Chocolatey..."
+    powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" || error_exit "Failed to install Chocolatey"
+    success_message "Chocolatey installed successfully"
+}
+
+install_python() {
+    info_message "Installing Python 3.12..."
+
+    OS=$(get_os)
+    case "$OS" in
+        macos)
+            if ! command_exists brew; then
+                install_homebrew
+            fi
+            brew install python@3.12 || error_exit "Failed to install Python 3.12"
+            brew link python@3.12 || warning_message "Failed to link Python 3.12"
+            ;;
+        windows)
+            if ! command_exists choco; then
+                install_chocolatey
+            fi
+            choco install python312 -y || error_exit "Failed to install Python 3.12"
+            ;;
+        linux)
+            warning_message "Automatic Python installation on Linux is not supported"
+            warning_message "Please install Python 3.12 manually using your distribution's package manager"
+            error_exit "Python 3.12 is required"
+            ;;
+        *)
+            error_exit "Unsupported operating system"
+            ;;
+    esac
+
+    success_message "Python 3.12 installed successfully"
+}
+
+install_node() {
+    info_message "Installing Node.js..."
+
+    OS=$(get_os)
+    case "$OS" in
+        macos)
+            if ! command_exists brew; then
+                install_homebrew
+            fi
+            brew install node || error_exit "Failed to install Node.js"
+            ;;
+        windows)
+            if ! command_exists choco; then
+                install_chocolatey
+            fi
+            choco install nodejs -y || error_exit "Failed to install Node.js"
+            ;;
+        linux)
+            warning_message "Automatic Node.js installation on Linux is not supported"
+            warning_message "Please install Node.js manually using your distribution's package manager"
+            error_exit "Node.js is required"
+            ;;
+        *)
+            error_exit "Unsupported operating system"
+            ;;
+    esac
+
+    success_message "Node.js installed successfully"
+}
+
+install_pnpm() {
+    info_message "Installing pnpm..."
+
+    if command_exists npm; then
+        npm install -g pnpm || error_exit "Failed to install pnpm"
+    else
+        OS=$(get_os)
+        case "$OS" in
+            macos|linux)
+                curl -fsSL https://get.pnpm.io/install.sh | sh - || error_exit "Failed to install pnpm"
+                ;;
+            windows)
+                powershell -Command "iwr https://get.pnpm.io/install.ps1 -useb | iex" || error_exit "Failed to install pnpm"
+                ;;
+            *)
+                error_exit "Unsupported operating system"
+                ;;
+        esac
+    fi
+
+    success_message "pnpm installed successfully"
+}
+
+install_uv() {
+    info_message "Installing uv..."
+
+    if command_exists pip || command_exists pip3; then
+        PIP_CMD="pip"
+        if ! command_exists pip && command_exists pip3; then
+            PIP_CMD="pip3"
+        fi
+
+        $PIP_CMD install uv || error_exit "Failed to install uv"
+    else
+        OS=$(get_os)
+        case "$OS" in
+            macos|linux)
+                curl -LsSf https://astral.sh/uv/install.sh | sh || error_exit "Failed to install uv"
+                ;;
+            windows)
+                powershell -Command "irm https://astral.sh/uv/install.ps1 | iex" || error_exit "Failed to install uv"
+                ;;
+            *)
+                error_exit "Unsupported operating system"
+                ;;
+        esac
+    fi
+
+    success_message "uv installed successfully"
+}
+
 error_exit() {
     echo -e "${EMOJI_ERROR} ${RED}Error: $1${NC}" >&2
     exit 1
@@ -53,33 +186,51 @@ size_message() {
 check_requirements() {
     info_message "Checking for required tools..."
 
+    # Check for Python 3.12
+    PYTHON_FOUND=false
+    PYTHON_VERSION=""
+    PYTHON_CMD=""
 
+    for py_cmd in "python3.12" "python3" "python"; do
+        if command_exists $py_cmd; then
+            PYTHON_CMD=$py_cmd
+            PYTHON_VERSION=$($py_cmd --version 2>&1)
+            PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d' ' -f2 | cut -d'.' -f1)
+            PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d' ' -f2 | cut -d'.' -f2)
+
+            if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 12 ]; then
+                PYTHON_FOUND=true
+                success_message "Python 3.12+ is installed: $PYTHON_VERSION"
+                break
+            fi
+        fi
+    done
+
+    if [ "$PYTHON_FOUND" = false ]; then
+        warning_message "Python 3.12 or higher is not installed"
+        install_python
+    fi
+
+    # Check for Node.js
     if ! command_exists node; then
-        error_exit "Node.js is not installed. Please install Node.js from https://nodejs.org/"
+        warning_message "Node.js is not installed"
+        install_node
     else
         success_message "Node.js is installed: $(node --version)"
     fi
 
-
+    # Check for pnpm
     if ! command_exists pnpm; then
-        error_exit "pnpm is not installed. Please install pnpm using 'npm install -g pnpm'"
+        warning_message "pnpm is not installed"
+        install_pnpm
     else
         success_message "pnpm is installed: $(pnpm --version)"
     fi
 
-
-    if ! command_exists python3; then
-        error_exit "Python 3 is not installed. Please install Python 3 from https://www.python.org/downloads/"
-    else
-        success_message "Python is installed: $(python3 --version)"
-    fi
-
-
+    # Check for uv
     if ! command_exists uv; then
-        warning_message "uv is not installed. Please install uv using one of the following methods:"
-        echo "  - curl -LsSf https://astral.sh/uv/install.sh | sh"
-        echo "  - pip install uv"
-        error_exit "uv is required for Python dependency management"
+        warning_message "uv is not installed"
+        install_uv
     else
         success_message "uv is installed: $(uv --version)"
     fi
