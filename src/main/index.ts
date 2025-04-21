@@ -57,6 +57,7 @@ const startApiSidecar = (): void => {
       env: {
         ...process.env,
         PYTHONPATH: apiDir, // Make sure Python can find the modules
+        ELECTRON_APP_PATH: appPath, // Pass the app path as an environment variable
       },
     });
   } else {
@@ -71,7 +72,12 @@ const startApiSidecar = (): void => {
     }
 
     logger.info(`Starting API executable: ${apiPath}`);
-    apiProcess = spawn(apiPath, [appPath]);
+    apiProcess = spawn(apiPath, [], {
+      env: {
+        ...process.env,
+        ELECTRON_APP_PATH: appPath, // Pass the app path as an environment variable
+      },
+    });
   }
 
   setupApiProcessHandlers();

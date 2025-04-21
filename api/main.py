@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Any
 
@@ -20,12 +21,12 @@ app.add_middleware(
 )
 
 
-app_path = "Unknown"
-if len(sys.argv) > 1:
-    app_path = sys.argv[1]
+# Get the app path from the environment variable
+app_path = os.environ.get("ELECTRON_APP_PATH", "Unknown")
+if app_path != "Unknown":
     log_info(f"Application path set to: {app_path}")
 else:
-    log_warning("No application path provided in command line arguments")
+    log_warning("No application path provided in environment variables")
 
 
 @app.get("/")
