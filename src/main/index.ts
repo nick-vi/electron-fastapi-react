@@ -28,53 +28,49 @@ let apiProcess: ChildProcess | null = null;
 let mainWindow: BrowserWindow | null = null;
 
 // Get the __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Path to the FastAPI executable
-const getApiPath = (): string => {
-  const appPath = app.getAppPath();
-
-  // Determine the path based on the platform
-  if (process.platform === "win32") {
-    return path.join(appPath, "api", "dist", "api", "api.exe");
-  } else {
-    return path.join(appPath, "api", "dist", "api", "api");
-  }
-};
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
 
 // Start the FastAPI sidecar
 const startApiSidecar = (): void => {
-  const apiPath = getApiPath();
   const appPath = app.getAppPath();
+  const isDevelopment = process.env.NODE_ENV === "development";
 
-  // Check if the API executable exists
-  if (!fs.existsSync(apiPath)) {
-    logger.error(`API executable not found at: ${apiPath}`);
-
-    // Try to run the Python script directly if the executable doesn't exist
+  if (isDevelopment) {
+    // In development mode, run the Python script directly
     const pythonScript = path.join(appPath, "api", "run.py");
-    if (fs.existsSync(pythonScript)) {
-      logger.info(`Trying to run Python script directly: ${pythonScript}`);
 
-      // Find Python executable
-      const pythonExe = process.platform === "win32" ? "python" : "python3";
-
-      // Start the Python process
-      apiProcess = spawn(pythonExe, [pythonScript, appPath]);
-      setupApiProcessHandlers();
-      return;
+    if (!fs.existsSync(pythonScript)) {
+      logger.error(`Python script not found at: ${pythonScript}`);
+      throw new Error(`Python script not found at: ${pythonScript}`);
     }
 
-    logger.error("Could not find API executable or Python script");
-    return;
+    logger.info(`Starting Python script directly: ${pythonScript}`);
+
+    // Find Python executable
+    const pythonExe = process.platform === "win32" ? "python" : "python3";
+
+    // Start the Python process
+    apiProcess = spawn(pythonExe, [pythonScript, appPath]);
+  } else {
+    // In production mode, run the built executable
+    const apiPath =
+      process.platform === "win32"
+        ? path.join(appPath, "api", "dist", "api", "api.exe")
+        : path.join(appPath, "api", "dist", "api", "api");
+
+    if (!fs.existsSync(apiPath)) {
+      logger.error(`API executable not found at: ${apiPath}`);
+      throw new Error(`API executable not found at: ${apiPath}`);
+    }
+
+    logger.info(`Starting API executable: ${apiPath}`);
+
+    // Pass the app path as an argument to the FastAPI sidecar
+    apiProcess = spawn(apiPath, [appPath]);
   }
 
-  logger.info(`Starting API sidecar at: ${apiPath}`);
-  logger.info(`With app path: ${appPath}`);
-
-  // Pass the app path as an argument to the FastAPI sidecar
-  apiProcess = spawn(apiPath, [appPath]);
+  // Set up handlers for the API process
   setupApiProcessHandlers();
 };
 
@@ -129,7 +125,7 @@ const createWindow = (): void => {
     width: 1000,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname, "../preload/index.js"),
+      preload: path.join(currentDirPath, "../preload/index.js"),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -139,7 +135,12 @@ const createWindow = (): void => {
   global.mainWindow = mainWindow;
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, "../../src/renderer/index.html"));
+  // Load the index.html of the app
+  if (process.env.ELECTRON_RENDERER_URL) {
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+  } else {
+    mainWindow.loadFile(path.join(currentDirPath, "../renderer/index.html"));
+  }
 
   // Open the DevTools in development
   if (process.env.NODE_ENV === "development") {

@@ -69,6 +69,6 @@ export default [
 
   // Ignore build output and dependencies
   {
-    ignores: ["node_modules/**", "dist/**", "out/**", "app/**"],
+    ignores: ["node_modules/**", "dist/**", "out/**", "app/**", "electron.vite.config.ts"],
   },
 ];

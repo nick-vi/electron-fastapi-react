@@ -88,10 +88,11 @@ typings/
 # Vite
 .vite/
 
-# Electron-Forge
+# Electron-Vite
 out/
 app/
 dist/
+dist-electron/
 
 # Python
 __pycache__/

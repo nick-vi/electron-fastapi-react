@@ -12,10 +12,10 @@ import { LogEntry, LogLevel, LogSource } from "../common/logger-types";
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = path.dirname(currentFilePath);
 
-const LOG_FILE_PATH = path.join(__dirname, "../../logs/electron-fastapi.log");
+const LOG_FILE_PATH = path.join(currentDirPath, "../../logs/electron-fastapi.log");
 
 try {
   const logDir = path.dirname(LOG_FILE_PATH);
