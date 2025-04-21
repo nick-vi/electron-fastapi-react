@@ -47,7 +47,7 @@ install_chocolatey() {
 }
 
 install_python() {
-    info_message "Installing Python 3.12..."
+    info_message "Installing Python..."
 
     OS=$(get_os)
     case "$OS" in
@@ -55,26 +55,25 @@ install_python() {
             if ! command_exists brew; then
                 install_homebrew
             fi
-            brew install python@3.12 || error_exit "Failed to install Python 3.12"
-            brew link python@3.12 || warning_message "Failed to link Python 3.12"
+            brew install python || error_exit "Failed to install Python"
             ;;
         windows)
             if ! command_exists choco; then
                 install_chocolatey
             fi
-            choco install python312 -y || error_exit "Failed to install Python 3.12"
+            choco install python -y || error_exit "Failed to install Python"
             ;;
         linux)
             warning_message "Automatic Python installation on Linux is not supported"
-            warning_message "Please install Python 3.12 manually using your distribution's package manager"
-            error_exit "Python 3.12 is required"
+            warning_message "Please install Python manually using your distribution's package manager"
+            error_exit "Python is required"
             ;;
         *)
             error_exit "Unsupported operating system"
             ;;
     esac
 
-    success_message "Python 3.12 installed successfully"
+    success_message "Python installed successfully"
 }
 
 install_node() {
@@ -183,34 +182,15 @@ size_message() {
     echo -e "${EMOJI_SIZE} ${MAGENTA}$1${NC}"
 }
 
-# Global variables
-PYTHON_FOUND=false
-PYTHON_VERSION=""
-PYTHON_CMD=""
-
 check_requirements() {
     info_message "Checking for required tools..."
 
-    # Check for Python 3.12
-
-    for py_cmd in "python3.12" "python3" "python"; do
-        if command_exists $py_cmd; then
-            PYTHON_CMD=$py_cmd
-            PYTHON_VERSION=$($py_cmd --version 2>&1)
-            PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d' ' -f2 | cut -d'.' -f1)
-            PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d' ' -f2 | cut -d'.' -f2)
-
-            if [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -ge 12 ]; then
-                PYTHON_FOUND=true
-                success_message "Python 3.12+ is installed: $PYTHON_VERSION"
-                break
-            fi
-        fi
-    done
-
-    if [ "$PYTHON_FOUND" = false ]; then
-        warning_message "Python 3.12 or higher is not installed"
+    # Check for Python
+    if ! command_exists python3; then
+        warning_message "Python 3 is not installed"
         install_python
+    else
+        success_message "Python is installed: $(python3 --version)"
     fi
 
     # Check for Node.js
@@ -238,13 +218,7 @@ check_requirements() {
     fi
 }
 
-calculate_python_hash() {
-    if [ -f "api/pyproject.toml" ]; then
-        cat api/pyproject.toml | md5sum | cut -d ' ' -f 1
-    else
-        echo "fastapi[standard] pyinstaller" | md5sum | cut -d ' ' -f 1
-    fi
-}
+
 
 format_time() {
     local ms=$1
@@ -315,85 +289,56 @@ run_timed_command() {
     fi
 }
 
-get_latest_versions() {
-    info_message "Using dependencies from api/pyproject.toml"
-}
+
 
 setup_python() {
     info_message "Setting up Python environment..."
 
-    get_latest_versions
+    # Check if uv is installed
+    if ! command_exists uv; then
+        warning_message "uv is not installed. Installing it now..."
+        install_uv
+    fi
 
+    # Set the virtual environment directory
+    VENV_DIR="api/.venv"
 
-    if [ ! -f "api/pyproject.toml" ]; then
-        warning_message "api/pyproject.toml not found, creating a minimal one"
+    # Create the api directory if it doesn't exist
+    if [ ! -d "api" ]; then
         mkdir -p api
+    fi
+
+    # Create or update the virtual environment
+    info_message "Setting up virtual environment in $VENV_DIR..."
+    uv venv $VENV_DIR || error_exit "Failed to create virtual environment"
+    success_message "Created virtual environment at $VENV_DIR"
+
+    # Log the Python version in the virtual environment
+    VENV_PYTHON_VERSION=$($VENV_DIR/bin/python --version 2>&1)
+    info_message "Virtual environment Python version: ${VENV_PYTHON_VERSION}"
+
+    # Install dependencies from pyproject.toml
+    if [ -f "api/pyproject.toml" ]; then
+        info_message "Installing dependencies from pyproject.toml using uv..."
+        (cd api && $VENV_DIR/bin/uv pip install -e .) || error_exit "Failed to install Python dependencies"
+        success_message "Installed Python dependencies"
+    else
+        warning_message "api/pyproject.toml not found, creating a minimal one"
         echo '[project]' > api/pyproject.toml
         echo 'name = "electron-fastapi-sidecar-api"' >> api/pyproject.toml
         echo 'version = "0.1.0"' >> api/pyproject.toml
-        echo 'dependencies = ["fastapi[standard]", "pyinstaller"]' >> api/pyproject.toml
-    fi
+        echo 'requires-python = ">=3.12"' >> api/pyproject.toml
+        echo 'dependencies = ["fastapi[standard]>=0.115.11", "uvicorn>=0.29.0", "pyinstaller>=6.5.0"]' >> api/pyproject.toml
 
-    PYTHON_HASH=$(calculate_python_hash)
-    HASH_FILE="api/.deps_hash"
-
-    if [ -f "$HASH_FILE" ] && [ "$(cat $HASH_FILE)" == "$PYTHON_HASH" ]; then
-        success_message "Python dependencies are up to date."
-    else
-        info_message "Installing Python dependencies..."
-
-        if [ ! -d "api/.venv" ]; then
-            # Use the Python 3.12+ that we found in check_requirements
-            if [ "$PYTHON_FOUND" = true ] && [ -n "$PYTHON_CMD" ]; then
-                info_message "Creating virtual environment with $PYTHON_CMD ($PYTHON_VERSION)"
-                PYTHON_PATH=$(which $PYTHON_CMD)
-                uv venv --python $PYTHON_PATH api/.venv || error_exit "Failed to create virtual environment"
-            else
-                # Try to find Python 3.12 or higher again
-                PYTHON_PATH=""
-                for py_cmd in "python3.12" "python3.13" "python3.14" "python3"; do
-                    if command_exists $py_cmd; then
-                        PY_VERSION=$($py_cmd --version 2>&1)
-                        info_message "Found $py_cmd: $PY_VERSION"
-                        PYTHON_PATH=$(which $py_cmd)
-                        break
-                    fi
-                done
-
-                if [ -z "$PYTHON_PATH" ]; then
-                    warning_message "Could not find Python 3.12 or higher. Using system Python."
-                    warning_message "This may cause issues if your system Python is older than 3.12."
-                    warning_message "Consider installing Python 3.12 or higher."
-                    uv venv api/.venv || error_exit "Failed to create virtual environment"
-                else
-                    info_message "Creating virtual environment with $PYTHON_PATH"
-                    uv venv --python $PYTHON_PATH api/.venv || error_exit "Failed to create virtual environment"
-                fi
-            fi
-
-            success_message "Created virtual environment at api/.venv"
-
-            # Log the Python version in the virtual environment
-            VENV_PYTHON_VERSION=$(api/.venv/bin/python --version 2>&1)
-            info_message "Virtual environment Python version: ${VENV_PYTHON_VERSION}"
-        fi
-
-        if [ -f "api/pyproject.toml" ]; then
-            cd api && VIRTUAL_ENV=.venv uv pip install -e . || error_exit "Failed to install Python dependencies"
-            cd ..
-        else
-            VIRTUAL_ENV=api/.venv uv pip install fastapi[standard] pyinstaller || error_exit "Failed to install Python dependencies"
-        fi
+        info_message "Installing dependencies from newly created pyproject.toml..."
+        (cd api && $VENV_DIR/bin/uv pip install -e .) || error_exit "Failed to install Python dependencies"
         success_message "Installed Python dependencies"
-
-        echo "$PYTHON_HASH" > "$HASH_FILE"
     fi
 
-
-    if [ ! -f "api/.venv/bin/pyinstaller" ]; then
+    # Ensure PyInstaller is installed
+    if [ ! -f "$VENV_DIR/bin/pyinstaller" ]; then
         info_message "Installing PyInstaller..."
-        cd api && VIRTUAL_ENV=.venv uv pip install pyinstaller || error_exit "Failed to install PyInstaller"
-        cd ..
+        $VENV_DIR/bin/uv pip install pyinstaller || error_exit "Failed to install PyInstaller"
         success_message "Installed PyInstaller"
     fi
 }
