@@ -28,11 +28,6 @@ export default defineConfig({
           index: resolve(__dirname, "src/preload/index.ts"),
         },
       },
-      // Use CommonJS format for preload script
-      lib: {
-        entry: "src/preload/index.ts",
-        formats: ["cjs"],
-      },
     },
     resolve: {
       alias: {

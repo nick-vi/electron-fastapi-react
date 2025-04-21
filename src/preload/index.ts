@@ -4,12 +4,8 @@
  * It has access to both Node.js and browser APIs.
  */
 
-const { contextBridge, ipcRenderer } = require("electron");
-
-// Import types for documentation only
-// These won't be included in the compiled JS
-type LogEntry = any;
-type LogLevel = any;
+import type { LogEntry, LogLevel } from "@common/logger-types";
+import { contextBridge, ipcRenderer } from "electron";
 
 /**
  * Expose a limited API to the renderer process

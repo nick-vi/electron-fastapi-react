@@ -20,7 +20,7 @@ export const LogSource = {
 export type LogSource = (typeof LogSource)[keyof typeof LogSource];
 
 export type LogEntry = {
-  timestamp: string;
+  timestamp: string; // Always set by addLogEntry if not provided
   level: LogLevel;
   source: LogSource;
   message: string;
