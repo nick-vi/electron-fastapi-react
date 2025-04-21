@@ -58,21 +58,37 @@ const startApiSidecar = (): void => {
       },
     });
   } else {
-    const apiPath =
-      process.platform === "win32"
-        ? path.join(appPath, "api", "dist", "api", "api.exe")
-        : path.join(appPath, "api", "dist", "api", "api");
+    // In production mode, use the extraResources api directory
+    const resourcesPath = process.resourcesPath;
+    const apiDir = path.join(resourcesPath, "api");
 
-    if (!fs.existsSync(apiPath)) {
-      logger.error(`API executable not found at: ${apiPath}`);
-      throw new Error(`API executable not found at: ${apiPath}`);
+    // Check if the API directory exists
+    if (!fs.existsSync(apiDir)) {
+      logger.error(`API directory not found at: ${apiDir}`);
+      throw new Error(`API directory not found at: ${apiDir}`);
     }
 
-    logger.info(`Starting API executable: ${apiPath}`);
-    apiProcess = spawn(apiPath, [], {
+    // Check if main.py exists
+    const mainPyPath = path.join(apiDir, "main.py");
+    if (!fs.existsSync(mainPyPath)) {
+      logger.error(`main.py not found at: ${mainPyPath}`);
+      throw new Error(`main.py not found at: ${mainPyPath}`);
+    }
+
+    // In production, we'll use python/python3 directly
+    const pythonCommand = process.platform === "win32" ? "python" : "python3";
+
+    logger.info(`Using production API directory: ${apiDir}`);
+    logger.info(`Resources path: ${resourcesPath}`);
+    logger.info(`Running command: ${pythonCommand} -m uvicorn main:app in directory ${apiDir}`);
+
+    // Start the process
+    apiProcess = spawn(pythonCommand, ["-m", "uvicorn", "main:app"], {
+      cwd: apiDir, // Set the working directory to the API directory
       env: {
         ...process.env,
-        ELECTRON_APP_PATH: appPath,
+        PYTHONPATH: apiDir, // Make sure Python can find the modules
+        ELECTRON_APP_PATH: appPath, // Pass the app path as an environment variable
       },
     });
   }
