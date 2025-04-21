@@ -42,8 +42,23 @@ const startApiSidecar = (): void => {
 
     logger.info(`Starting Python script directly: ${pythonScript}`);
 
+    // Use uv to run the Python script with the correct environment
     const uvCommand = process.platform === "win32" ? "uv" : "uv";
-    apiProcess = spawn(uvCommand, ["run", pythonScript, appPath]);
+    const apiDir = path.join(appPath, "api");
+
+    // Log the command we're about to run
+    logger.info(
+      `Running command: ${uvCommand} run -m uvicorn main:app --reload in directory ${apiDir}`
+    );
+
+    // Use uv to run uvicorn directly
+    apiProcess = spawn(uvCommand, ["run", "-m", "uvicorn", "main:app", "--reload"], {
+      cwd: apiDir, // Set the working directory to the API directory
+      env: {
+        ...process.env,
+        PYTHONPATH: apiDir, // Make sure Python can find the modules
+      },
+    });
   } else {
     const apiPath =
       process.platform === "win32"

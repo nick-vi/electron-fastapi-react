@@ -171,9 +171,18 @@ export function parsePythonLog(line: string): boolean {
   }
 
   if (line.trim()) {
+    // Check if this is a Python traceback or error
+    const isError =
+      line.includes("Traceback (most recent call last)") ||
+      line.includes("Error:") ||
+      line.includes("Exception:") ||
+      line.includes("ModuleNotFoundError:") ||
+      line.includes("ImportError:") ||
+      line.includes("SyntaxError:");
+
     addLogEntry({
       timestamp: new Date().toISOString(),
-      level: LogLevel.INFO,
+      level: isError ? LogLevel.ERROR : LogLevel.INFO,
       source: LogSource.PYTHON,
       message: line.trim(),
     });
