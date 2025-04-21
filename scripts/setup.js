@@ -48,7 +48,7 @@ async function checkDependencies() {
   const pythonCmd = isWindows ? "python" : "python3";
   if (!(await checkCommand(pythonCmd))) {
     throw new Error(
-      `${pythonCmd} is required but not installed. Please install Python 3.9 or later.`
+      `${pythonCmd} is required but not installed. Please install Python 3.13 or later.`
     );
   }
   console.log("✓ Python is installed");
@@ -66,7 +66,7 @@ async function setupPython() {
     mkdirSync(join(projectRoot, "api"), { recursive: true });
   }
 
-  const { stdout: uvOutput } = await execAsync("uv venv api/.venv", { cwd: projectRoot });
+  const { stdout: uvOutput } = await execAsync("uv venv --python=python3.13 api/.venv", { cwd: projectRoot });
   console.log(uvOutput);
 
   const { stdout: pipOutput } = await execAsync("uv pip install --requirements pyproject.toml", {

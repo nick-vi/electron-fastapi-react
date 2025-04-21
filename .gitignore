@@ -104,6 +104,8 @@ api/venv/
 api/build/
 api/dist/
 api/*.egg-info/
+api/*.spec
 .venv/
 .ruff_cache/
 .build-cache
+api.spec

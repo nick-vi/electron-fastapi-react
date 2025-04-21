@@ -1,22 +1,28 @@
 import { spawn } from "child_process";
+import { exec } from "child_process";
 import crypto from "crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
-
-import { createRequire } from "module";
+import { promisify } from "util";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
-const require = createRequire(import.meta.url);
+const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, "..");
 
-const pkg = require("../package.json");
-const version = pkg.version;
+// Read package.json
+const packageJsonPath = join(projectRoot, "package.json");
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+const version = packageJson.version;
 
 const platform = process.env.PLATFORM || process.platform;
 const isWindows = platform === "win" || process.platform === "win32";
 const forceRebuild = process.argv.includes("--force");
+const useOnedir = process.argv.includes("--onedir");
+
+// PyInstaller packaging mode
+const packagingMode = useOnedir ? "--onedir" : "--onefile";
 
 console.log(`🚀 Building Electron FastAPI Sidecar v${version} for ${platform}...`);
 
@@ -118,34 +124,45 @@ async function buildFastAPI() {
   if (!existsSync(specFile)) {
     const pathSep = isWindows ? ";" : ":";
 
+    // Get all installed packages using uv pip freeze
+    console.log("📦 Extracting installed Python packages...");
+    const { stdout: pipFreezeOutput } = await execAsync("uv pip freeze", { cwd: apiDir });
+
+    // Parse the output to get package names
+    const packageNames = pipFreezeOutput.split('\n')
+      .filter(line => line.trim() && !line.startsWith('#'))
+      .map(line => {
+        // Extract package name (before any version specifiers)
+        const match = line.match(/^([a-zA-Z0-9_-]+)(==|>=|<=|~=|!=|===|\[.*\])?/);
+        return match ? match[1].toLowerCase() : null;
+      })
+      .filter(Boolean)
+      // Filter out packages that shouldn't be included
+      .filter(pkg => !['pip', 'setuptools', 'wheel', 'pyinstaller', 'pyinstaller-hooks-contrib'].includes(pkg));
+
+    console.log("📦 Detected Python dependencies:", packageNames.join(", "));
+
+    // Build PyInstaller arguments
     const pyiArgs = [
       "-m",
       "PyInstaller",
       "--name",
       "api",
-      "--onefile",
+      packagingMode,
       "--add-data",
       `pyproject.toml${pathSep}./`,
-      "--hidden-import",
-      "uvicorn.logging",
-      "--hidden-import",
-      "uvicorn.protocols",
-      "--hidden-import",
-      "uvicorn.protocols.http",
-      "--hidden-import",
-      "uvicorn.protocols.http.auto",
-      "--hidden-import",
-      "uvicorn.protocols.websockets",
-      "--hidden-import",
-      "uvicorn.protocols.websockets.auto",
-      "--hidden-import",
-      "uvicorn.lifespan",
-      "--hidden-import",
-      "uvicorn.lifespan.on",
-      "--hidden-import",
-      "uvicorn.lifespan.off",
-      "run.py",
+      "--add-data",
+      `*.py${pathSep}./`,
     ];
+
+    // Add all dependencies as collect-submodules
+    for (const pkg of packageNames) {
+      pyiArgs.push("--collect-submodules");
+      pyiArgs.push(pkg);
+    }
+
+    // Add the main script
+    pyiArgs.push("run.py");
 
     await spawnAsync(venvPython, pyiArgs, { cwd: apiDir });
   }

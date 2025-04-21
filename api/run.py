@@ -1,5 +1,8 @@
 from pathlib import Path
+import os
 import sys
+import importlib.util
+from typing import List, Optional
 
 import uvicorn
 
@@ -9,7 +12,7 @@ from logger import get_logger, log_error, log_info, log_warning
 logger = get_logger("runner")
 
 
-def start_server(port: int = 8000, app_args: list[str] | None = None) -> None:
+def start_server(port: int = 8000, app_args: Optional[List[str]] = None) -> None:
     """
     Start the FastAPI server with the given port and arguments.
 
@@ -25,6 +28,27 @@ def start_server(port: int = 8000, app_args: list[str] | None = None) -> None:
         cwd = Path.cwd()
         log_info(f"Current working directory: {cwd}")
 
+        # Check if we're running in a PyInstaller bundle
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            log_info(f"Running in PyInstaller bundle: {sys._MEIPASS}")
+            # Try to import main module directly
+            try:
+                # First, try to import from current directory
+                spec = importlib.util.spec_from_file_location("main", os.path.join(cwd, "main.py"))
+                if spec and spec.loader:
+                    main_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(main_module)
+                    log_info("Successfully imported main module from current directory")
+                    uvicorn.run(
+                        main_module.app, host="127.0.0.1", port=port, reload=False, log_level="info"
+                    )
+                    return
+            except Exception as e:
+                log_warning(f"Failed to import main module from current directory: {str(e)}")
+                # Continue to standard import
+
+        # Standard import approach
+        log_info("Using standard import for main:app")
         uvicorn.run(
             "main:app", host="127.0.0.1", port=port, reload=False, log_level="info"
         )
