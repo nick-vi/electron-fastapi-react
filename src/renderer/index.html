@@ -9,10 +9,15 @@
     <h1>Electron FastAPI Sidecar</h1>
     <p>This application demonstrates an Electron app with a FastAPI sidecar.</p>
 
+    <div id="api-status" class="api-status loading">
+      <span class="loading-spinner"></span>
+      <span class="status-text">Starting API sidecar...</span>
+    </div>
+
     <div class="container">
       <div class="button-group">
-        <button id="fetchButton">Fetch from FastAPI</button>
-        <button id="fetchLogsButton">Generate Logs</button>
+        <button id="fetchButton" disabled>Fetch from FastAPI</button>
+        <button id="fetchLogsButton" disabled>Generate Logs</button>
         <button id="clearLogsButton">Clear Logs</button>
       </div>
 
@@ -200,13 +205,57 @@
         }
       };
 
+      // Start the API sidecar
+      const startApiSidecar = async () => {
+        try {
+          const apiStatus = document.getElementById("api-status");
+          const fetchButton = document.getElementById("fetchButton");
+          const fetchLogsButton = document.getElementById("fetchLogsButton");
+
+          if (window.api && window.api.startApiSidecar) {
+            logFromRenderer("info", "Starting API sidecar...");
+            await window.api.startApiSidecar();
+            logFromRenderer("info", "API sidecar started successfully");
+
+            // Update UI to show API is ready
+            apiStatus.classList.remove("loading");
+            apiStatus.classList.add("ready");
+            apiStatus.querySelector(".status-text").textContent = "API sidecar is ready";
+
+            // Enable buttons
+            fetchButton.disabled = false;
+            fetchLogsButton.disabled = false;
+          } else {
+            console.error("API not available for starting sidecar");
+            logFromRenderer("error", "API not available for starting sidecar");
+
+            // Update UI to show error
+            apiStatus.classList.remove("loading");
+            apiStatus.classList.add("error");
+            apiStatus.querySelector(".status-text").textContent = "Error: API not available";
+          }
+        } catch (error) {
+          console.error(`Error starting API sidecar: ${error.message}`);
+          logFromRenderer("error", `Error starting API sidecar: ${error.message}`);
+
+          // Update UI to show error
+          const apiStatus = document.getElementById("api-status");
+          apiStatus.classList.remove("loading");
+          apiStatus.classList.add("error");
+          apiStatus.querySelector(".status-text").textContent = `Error: ${error.message}`;
+        }
+      };
+
       // Initialize when the DOM is loaded
-      document.addEventListener("DOMContentLoaded", () => {
+      document.addEventListener("DOMContentLoaded", async () => {
         initializeLogger();
         updateLogUI();
 
         // Log that the renderer is ready
         logFromRenderer("info", "Renderer initialized");
+
+        // Start the API sidecar
+        await startApiSidecar();
       });
 
       // Fetch data button event listener

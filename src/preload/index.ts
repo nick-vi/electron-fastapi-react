@@ -73,4 +73,11 @@ contextBridge.exposeInMainWorld("api", {
       ipcRenderer.removeListener("log-entry", listener);
     };
   },
+
+  /**
+   * Start the API sidecar process
+   */
+  startApiSidecar: async (): Promise<boolean> => {
+    return await ipcRenderer.invoke("start-api-sidecar");
+  },
 });

@@ -6,7 +6,7 @@
 import { isDevelopment } from "@common/utils";
 import logger from "@main/logger";
 import { ChildProcess, spawn } from "child_process";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import * as readline from "readline";
@@ -142,6 +142,13 @@ const createWindow = (): void => {
  */
 const setupIPC = (): void => {
   logger.setupLoggerIPC();
+
+  // Add IPC handler for starting the API sidecar
+  ipcMain.handle("start-api-sidecar", () => {
+    logger.info("Starting API sidecar from renderer request");
+    startApiSidecar();
+    return true;
+  });
 };
 
 app.whenReady().then(() => {
@@ -151,7 +158,6 @@ app.whenReady().then(() => {
   });
 
   setupIPC();
-  startApiSidecar();
   createWindow();
 
   app.on("activate", () => {
