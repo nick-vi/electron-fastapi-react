@@ -183,13 +183,15 @@ size_message() {
     echo -e "${EMOJI_SIZE} ${MAGENTA}$1${NC}"
 }
 
+# Global variables
+PYTHON_FOUND=false
+PYTHON_VERSION=""
+PYTHON_CMD=""
+
 check_requirements() {
     info_message "Checking for required tools..."
 
     # Check for Python 3.12
-    PYTHON_FOUND=false
-    PYTHON_VERSION=""
-    PYTHON_CMD=""
 
     for py_cmd in "python3.12" "python3" "python"; do
         if command_exists $py_cmd; then
@@ -341,25 +343,32 @@ setup_python() {
         info_message "Installing Python dependencies..."
 
         if [ ! -d "api/.venv" ]; then
-            # Try to find Python 3.12 or higher
-            PYTHON_PATH=""
-            for py_cmd in "python3.12" "python3.13" "python3.14" "python3"; do
-                if command_exists $py_cmd; then
-                    PY_VERSION=$($py_cmd --version 2>&1)
-                    info_message "Found $py_cmd: $PY_VERSION"
-                    PYTHON_PATH=$(which $py_cmd)
-                    break
-                fi
-            done
-
-            if [ -z "$PYTHON_PATH" ]; then
-                warning_message "Could not find Python 3.12 or higher. Using system Python."
-                warning_message "This may cause issues if your system Python is older than 3.12."
-                warning_message "Consider installing Python 3.12 or higher."
-                uv venv api/.venv || error_exit "Failed to create virtual environment"
-            else
-                info_message "Creating virtual environment with $PYTHON_PATH"
+            # Use the Python 3.12+ that we found in check_requirements
+            if [ "$PYTHON_FOUND" = true ] && [ -n "$PYTHON_CMD" ]; then
+                info_message "Creating virtual environment with $PYTHON_CMD ($PYTHON_VERSION)"
+                PYTHON_PATH=$(which $PYTHON_CMD)
                 uv venv --python $PYTHON_PATH api/.venv || error_exit "Failed to create virtual environment"
+            else
+                # Try to find Python 3.12 or higher again
+                PYTHON_PATH=""
+                for py_cmd in "python3.12" "python3.13" "python3.14" "python3"; do
+                    if command_exists $py_cmd; then
+                        PY_VERSION=$($py_cmd --version 2>&1)
+                        info_message "Found $py_cmd: $PY_VERSION"
+                        PYTHON_PATH=$(which $py_cmd)
+                        break
+                    fi
+                done
+
+                if [ -z "$PYTHON_PATH" ]; then
+                    warning_message "Could not find Python 3.12 or higher. Using system Python."
+                    warning_message "This may cause issues if your system Python is older than 3.12."
+                    warning_message "Consider installing Python 3.12 or higher."
+                    uv venv api/.venv || error_exit "Failed to create virtual environment"
+                else
+                    info_message "Creating virtual environment with $PYTHON_PATH"
+                    uv venv --python $PYTHON_PATH api/.venv || error_exit "Failed to create virtual environment"
+                fi
             fi
 
             success_message "Created virtual environment at api/.venv"
