@@ -71,7 +71,18 @@ check_requirements() {
     if ! command_exists python3; then
         error_exit "Python 3 is not installed. Please install Python 3 from https://www.python.org/downloads/"
     else
-        success_message "Python is installed: $(python3 --version)"
+        PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+        PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d'.' -f1)
+        PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d'.' -f2)
+
+        if [ "$PYTHON_MAJOR" -lt 3 ] || [ "$PYTHON_MAJOR" -eq 3 -a "$PYTHON_MINOR" -lt 12 ]; then
+            warning_message "Python $PYTHON_VERSION is installed, but Python 3.12 or higher is required."
+            warning_message "Please install Python 3.12 or higher from https://www.python.org/downloads/"
+            warning_message "Or update the Python version requirement in api/pyproject.toml to match your installed version."
+            error_exit "Python version requirement not met"
+        else
+            success_message "Python is installed: $(python3 --version)"
+        fi
     fi
 
 
@@ -133,7 +144,7 @@ get_dir_size() {
     local dir_path=$1
     if [ -d "$dir_path" ]; then
         local size=$(du -sk "$dir_path" | cut -f1)
-        echo $((size * 1024)) 
+        echo $((size * 1024))
     else
         echo 0
     fi
