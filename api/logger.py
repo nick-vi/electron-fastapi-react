@@ -7,7 +7,7 @@ import datetime
 import json
 import logging
 import sys
-from typing import Any
+from typing import Any, Optional
 
 
 logging.basicConfig(
@@ -23,7 +23,7 @@ class JSONFormatter(logging.Formatter):
     """
 
     def format(self, record: logging.LogRecord) -> str:
-        log_data: dict[str, Any] = {
+        log_data: dict = {
             "timestamp": datetime.datetime.now().isoformat(),
             "level": record.levelname,
             "source": "python",
@@ -78,7 +78,7 @@ for handler in logger.handlers[:]:
 logger.addHandler(stdout_handler)
 
 
-def get_logger(name: str | None = None) -> logging.Logger:
+def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
     Get a logger with the given name.
 

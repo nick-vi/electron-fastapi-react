@@ -7,7 +7,7 @@ authors = [
     {name = "nick-vi", email = "105120312+nick-vi@users.noreply.github.com"},
 ]
 
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.115.11",
     "uvicorn>=0.29.0",
