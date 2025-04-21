@@ -190,8 +190,27 @@ setup_python() {
         info_message "Installing Python dependencies..."
 
         if [ ! -d "api/.venv" ]; then
-            # Create a virtual environment with the Python version specified in pyproject.toml
-            uv venv api/.venv || error_exit "Failed to create virtual environment"
+            # Try to find Python 3.12 or higher
+            PYTHON_PATH=""
+            for py_cmd in "python3.12" "python3.13" "python3.14" "python3"; do
+                if command_exists $py_cmd; then
+                    PY_VERSION=$($py_cmd --version 2>&1)
+                    info_message "Found $py_cmd: $PY_VERSION"
+                    PYTHON_PATH=$(which $py_cmd)
+                    break
+                fi
+            done
+
+            if [ -z "$PYTHON_PATH" ]; then
+                warning_message "Could not find Python 3.12 or higher. Using system Python."
+                warning_message "This may cause issues if your system Python is older than 3.12."
+                warning_message "Consider installing Python 3.12 or higher."
+                uv venv api/.venv || error_exit "Failed to create virtual environment"
+            else
+                info_message "Creating virtual environment with $PYTHON_PATH"
+                uv venv --python $PYTHON_PATH api/.venv || error_exit "Failed to create virtual environment"
+            fi
+
             success_message "Created virtual environment at api/.venv"
 
             # Log the Python version in the virtual environment
@@ -200,7 +219,7 @@ setup_python() {
         fi
 
         if [ -f "api/pyproject.toml" ]; then
-            cd api && VIRTUAL_ENV=venv uv pip install -e . || error_exit "Failed to install Python dependencies"
+            cd api && VIRTUAL_ENV=.venv uv pip install -e . || error_exit "Failed to install Python dependencies"
             cd ..
         else
             VIRTUAL_ENV=api/.venv uv pip install fastapi[standard] pyinstaller || error_exit "Failed to install Python dependencies"
@@ -213,7 +232,7 @@ setup_python() {
 
     if [ ! -f "api/.venv/bin/pyinstaller" ]; then
         info_message "Installing PyInstaller..."
-        cd api && VIRTUAL_ENV=venv uv pip install pyinstaller || error_exit "Failed to install PyInstaller"
+        cd api && VIRTUAL_ENV=.venv uv pip install pyinstaller || error_exit "Failed to install PyInstaller"
         cd ..
         success_message "Installed PyInstaller"
     fi
@@ -233,7 +252,7 @@ setup_node() {
 generate_spec_file() {
     info_message "Generating PyInstaller spec file..."
 
-    (cd api && .venv/bin/pyi-makespec \
+    (cd api && ./.venv/bin/pyi-makespec \
         --name api \
         --add-data "pyproject.toml:./" \
         --hidden-import uvicorn.logging \
@@ -259,7 +278,7 @@ build_fastapi() {
         if [ ! -f "api/api.spec" ]; then
             generate_spec_file
         fi
-        (cd api && .venv/bin/pyinstaller api.spec) || error_exit "Failed to build FastAPI application"
+        (cd api && ./.venv/bin/pyinstaller api.spec) || error_exit "Failed to build FastAPI application"
         success_message "Built FastAPI application"
     fi
 }
