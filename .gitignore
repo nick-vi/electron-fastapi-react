@@ -90,6 +90,8 @@ typings/
 
 # Electron-Forge
 out/
+app/
+dist/
 
 # Python
 __pycache__/
