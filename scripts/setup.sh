@@ -319,7 +319,7 @@ setup_python() {
 
     # Install uv in the virtual environment
     info_message "Installing uv in the virtual environment..."
-    $VENV_DIR/bin/pip install uv || error_exit "Failed to install uv in the virtual environment"
+    $VENV_DIR/bin/python -m pip install uv || error_exit "Failed to install uv in the virtual environment"
     success_message "Installed uv in the virtual environment"
 
     # Install dependencies from pyproject.toml
