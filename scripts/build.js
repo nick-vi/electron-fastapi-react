@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import crypto from "crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { glob } from "glob";
+
 import { createRequire } from "module";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -36,6 +36,7 @@ function spawnAsync(command, args, options = {}) {
 
 async function generateSourceHash() {
   const apiDir = join(projectRoot, "api");
+  const { glob } = await import("glob");
   const files = await glob("**/*.py", {
     cwd: apiDir,
     ignore: ["**/__pycache__/**", "**/.venv/**"],
