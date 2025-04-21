@@ -1,17 +1,15 @@
-import { spawn } from "child_process";
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import crypto from "crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { promisify } from "util";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { promisify } from "util";
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, "..");
 
-// Read package.json
 const packageJsonPath = join(projectRoot, "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 const version = packageJson.version;
@@ -21,7 +19,6 @@ const isWindows = platform === "win" || process.platform === "win32";
 const forceRebuild = process.argv.includes("--force");
 const useOnedir = process.argv.includes("--onedir");
 
-// PyInstaller packaging mode
 const packagingMode = useOnedir ? "--onedir" : "--onefile";
 
 console.log(`🚀 Building Electron FastAPI Sidecar v${version} for ${platform}...`);
@@ -76,7 +73,6 @@ async function shouldRebuild() {
   const cacheFile = join(apiDir, ".build-cache");
   const distDir = join(apiDir, "dist", "api");
 
-  // Check if dist exists
   if (!existsSync(distDir)) {
     console.log("🆕 Build directory not found, rebuild required");
     return true;
@@ -102,14 +98,96 @@ async function updateBuildCache() {
   console.log("✅ Build cache updated");
 }
 
+async function generateSpecHash() {
+  const exclusions = {
+    common: [
+      // Test modules
+      "*.tests",
+      "*.tests.*",
+      "*._tests",
+      "*._tests.*",
+      "*.testing",
+      "*.testing.*",
+      // Documentation
+      "*.docs",
+      "*.docs.*",
+      "*.sphinxext",
+      "*.sphinxext.*",
+      // Examples
+      "*.examples",
+      "*.examples.*",
+      "*.sample",
+      "*.sample.*",
+      // Development tools
+      "*.__main__",
+      "*.__pycache__",
+      "*.debug",
+      "*.debug.*",
+      // Specific large packages with many unnecessary components
+      "pygments.lexers.*",
+      "pygments.styles.*",
+      "rich.diagnose",
+      "rich.traceback",
+      // Unused protocols and backends
+      "uvicorn.workers",
+    ],
+    platforms: {
+      win32: ["win32*", "winreg", "msvcrt", "winsound", "_winapi"],
+      darwin: ["macholib*", "AppKit", "Carbon", "CoreFoundation", "objc"],
+      linux: ["systemd", "apt_pkg"],
+    },
+    asyncio: {
+      win32: ["asyncio.unix_*"],
+      unix: ["asyncio.windows_*"],
+    },
+  };
+
+  let hash = crypto.createHash("sha256");
+  hash.update(JSON.stringify(exclusions));
+  return hash.digest("hex");
+}
+
+async function shouldUpdateSpec() {
+  if (forceRebuild) {
+    console.log("🔄 Force rebuild requested");
+    return true;
+  }
+
+  const apiDir = join(projectRoot, "api");
+  const specFile = join(apiDir, "api.spec");
+  const specCacheFile = join(apiDir, ".spec-cache");
+
+  if (!existsSync(specFile)) {
+    console.log("🆕 Spec file not found, update required");
+    return true;
+  }
+
+  try {
+    const currentHash = await generateSpecHash();
+    const cacheContent = readFileSync(specCacheFile, "utf-8");
+    const needsUpdate = cacheContent.trim() !== currentHash;
+    if (needsUpdate) {
+      console.log("🔄 Exclusions changed, spec update required");
+    }
+    return needsUpdate;
+  } catch {
+    console.log("🆕 No spec cache file found, update required");
+    return true;
+  }
+}
+
+async function updateSpecCache() {
+  const hash = await generateSpecHash();
+  writeFileSync(join(projectRoot, "api", ".spec-cache"), hash);
+  console.log("✅ Spec cache updated");
+}
+
 async function buildFastAPI() {
   console.log("\n🔨 Building FastAPI application...");
 
   const apiDir = join(projectRoot, "api");
-  const specFile = join(apiDir, "api.spec");
   const distDir = join(apiDir, "dist", "api");
 
-  // Clean dist if force rebuild
   if (forceRebuild && existsSync(distDir)) {
     console.log("🧹 Cleaning previous build...");
     rmSync(distDir, { recursive: true, force: true });
@@ -121,28 +199,31 @@ async function buildFastAPI() {
 
   await spawnAsync("uv", ["pip", "install", "pyinstaller"], { cwd: apiDir });
 
-  if (!existsSync(specFile)) {
+  const needsSpecUpdate = await shouldUpdateSpec();
+  if (needsSpecUpdate) {
     const pathSep = isWindows ? ";" : ":";
 
-    // Get all installed packages using uv pip freeze
     console.log("📦 Extracting installed Python packages...");
     const { stdout: pipFreezeOutput } = await execAsync("uv pip freeze", { cwd: apiDir });
 
-    // Parse the output to get package names
-    const packageNames = pipFreezeOutput.split('\n')
-      .filter(line => line.trim() && !line.startsWith('#'))
-      .map(line => {
-        // Extract package name (before any version specifiers)
+    const packageNames = pipFreezeOutput
+      .split("\n")
+      .filter((line) => line.trim() && !line.startsWith("#"))
+      .map((line) => {
         const match = line.match(/^([a-zA-Z0-9_-]+)(==|>=|<=|~=|!=|===|\[.*\])?/);
         return match ? match[1].toLowerCase() : null;
       })
       .filter(Boolean)
-      // Filter out packages that shouldn't be included
-      .filter(pkg => !['pip', 'setuptools', 'wheel', 'pyinstaller', 'pyinstaller-hooks-contrib'].includes(pkg));
 
-    console.log("📦 Detected Python dependencies:", packageNames.join(", "));
+      .filter(
+        (pkg) =>
+          !["pip", "setuptools", "wheel", "pyinstaller", "pyinstaller-hooks-contrib"].includes(pkg)
+      );
 
-    // Build PyInstaller arguments
+    console.log(
+      `📦 Detected ${packageNames.length} Python dependencies: ${packageNames.join(", ")}`
+    );
+
     const pyiArgs = [
       "-m",
       "PyInstaller",
@@ -155,23 +236,127 @@ async function buildFastAPI() {
       `*.py${pathSep}./`,
     ];
 
-    // Add all dependencies as collect-submodules
     for (const pkg of packageNames) {
       pyiArgs.push("--collect-submodules");
       pyiArgs.push(pkg);
     }
 
-    // Add the main script
+    const exclusions = {
+      common: [
+        // Test modules
+        "*.tests",
+        "*.tests.*",
+        "*._tests",
+        "*._tests.*",
+        "*.testing",
+        "*.testing.*",
+        // Documentation
+        "*.docs",
+        "*.docs.*",
+        "*.sphinxext",
+        "*.sphinxext.*",
+        // Examples
+        "*.examples",
+        "*.examples.*",
+        "*.sample",
+        "*.sample.*",
+        // Development tools
+        "*.__main__",
+        "*.__pycache__",
+        "*.debug",
+        "*.debug.*",
+        // Specific large packages with many unnecessary components
+        "pygments.lexers.*",
+        "pygments.styles.*",
+        "rich.diagnose",
+        "rich.traceback",
+        // Unused protocols and backends
+        "uvicorn.workers",
+      ],
+      platforms: {
+        win32: ["win32*", "winreg", "msvcrt", "winsound", "_winapi"],
+        darwin: ["macholib*", "AppKit", "Carbon", "CoreFoundation", "objc"],
+        linux: ["systemd", "apt_pkg"],
+      },
+      asyncio: {
+        win32: ["asyncio.unix_*"],
+        unix: ["asyncio.windows_*"],
+      },
+    };
+
+    const commonExclusionsCount = exclusions.common.length;
+    const platformExclusionsCount = Object.values(exclusions.platforms).reduce(
+      (total, patterns) => total + patterns.length,
+      0
+    );
+    const asyncioExclusionsCount = exclusions.asyncio.win32.length + exclusions.asyncio.unix.length;
+    const totalExclusionsCount =
+      commonExclusionsCount + platformExclusionsCount + asyncioExclusionsCount;
+
+    console.log("\n📊 DEPENDENCY ANALYSIS");
+    console.log(` Detected ${packageNames.length} Python dependencies: ${packageNames.join(", ")}`);
+    console.log(`🔍 Adding ${commonExclusionsCount} common exclusion patterns`);
+    console.log(`🔍 Total exclusion patterns: ${totalExclusionsCount}`);
+    console.log(`🔍 Platform-specific exclusions available: ${platformExclusionsCount}`);
+    console.log(`🔍 Asyncio-specific exclusions: ${asyncioExclusionsCount}`);
+    for (const pattern of exclusions.common) {
+      pyiArgs.push("--exclude-module");
+      pyiArgs.push(pattern);
+    }
+
+    const allPlatforms = Object.keys(exclusions.platforms);
+    let excludedPlatformModulesCount = 0;
+
+    for (const platform of allPlatforms) {
+      if (process.platform !== platform) {
+        const platformModulesCount = exclusions.platforms[platform].length;
+        excludedPlatformModulesCount += platformModulesCount;
+        console.log(`🔍 Excluding ${platformModulesCount} ${platform}-specific modules`);
+        for (const mod of exclusions.platforms[platform]) {
+          pyiArgs.push("--exclude-module");
+          pyiArgs.push(mod);
+        }
+      }
+    }
+
+    if (process.platform === "win32") {
+      console.log(`🔍 Excluding ${exclusions.asyncio.win32.length} asyncio Unix-specific modules`);
+      for (const mod of exclusions.asyncio.win32) {
+        pyiArgs.push("--exclude-module");
+        pyiArgs.push(mod);
+      }
+    } else {
+      console.log(
+        `🔍 Excluding ${exclusions.asyncio.unix.length} asyncio Windows-specific modules`
+      );
+      for (const mod of exclusions.asyncio.unix) {
+        pyiArgs.push("--exclude-module");
+        pyiArgs.push(mod);
+      }
+    }
+
+    const actualExclusionsCount =
+      commonExclusionsCount +
+      excludedPlatformModulesCount +
+      (process.platform === "win32"
+        ? exclusions.asyncio.win32.length
+        : exclusions.asyncio.unix.length);
+    console.log(`🔍 Total exclusions applied: ${actualExclusionsCount}`);
+    console.log(
+      `🔍 Dependency collection ratio: ${packageNames.length} collected vs ${actualExclusionsCount} excluded`
+    );
+    console.log("\n📊 END DEPENDENCY ANALYSIS\n");
+
     pyiArgs.push("run.py");
 
     await spawnAsync(venvPython, pyiArgs, { cwd: apiDir });
+    await updateSpecCache();
   }
 
   await spawnAsync(venvPython, ["-m", "PyInstaller", "api.spec", "--noconfirm"], {
     cwd: apiDir,
   });
 
-  // Make sure the binary is executable on non-Windows platforms
   if (!isWindows) {
     const binaryPath = join(distDir, "api");
     if (existsSync(binaryPath)) {

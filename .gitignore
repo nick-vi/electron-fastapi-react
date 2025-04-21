@@ -109,3 +109,4 @@ api/*.spec
 .ruff_cache/
 .build-cache
 api.spec
+.spec-cache
