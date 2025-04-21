@@ -46,10 +46,17 @@
           checkbox.addEventListener("change", updateLogFilters);
         });
 
-        // Listen for log entries from the main process
-        window.api.onLogEntry((entry) => {
-          updateLogUI();
-        });
+        // Check if API is available
+        if (window.api && window.api.onLogEntry) {
+          // Listen for log entries from the main process
+          window.api.onLogEntry((entry) => {
+            updateLogUI();
+          });
+        } else {
+          console.error("API not available. Preload script may not have loaded correctly.");
+          document.getElementById("log-container").innerHTML =
+            "<div class='error'>Error: API not available. Preload script may not have loaded correctly.</div>";
+        }
       };
 
       // Update log filters
@@ -154,26 +161,43 @@
         const isScrolledToBottom =
           logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 1;
 
-        // Get logs from the main process
-        const logs = await window.api.getLogs();
+        try {
+          // Check if API is available
+          if (window.api && window.api.getLogs) {
+            // Get logs from the main process
+            const logs = await window.api.getLogs();
 
-        // Update the log container
-        logContainer.innerHTML = logs.map(formatLogEntry).join("");
+            // Update the log container
+            logContainer.innerHTML = logs.map(formatLogEntry).join("");
 
-        // Apply filters
-        updateLogFilters();
+            // Apply filters
+            updateLogFilters();
 
-        // Scroll to bottom if it was at the bottom before
-        if (isScrolledToBottom) {
-          logContainer.scrollTop = logContainer.scrollHeight;
+            // Scroll to bottom if it was at the bottom before
+            if (isScrolledToBottom) {
+              logContainer.scrollTop = logContainer.scrollHeight;
+            }
+          }
+        } catch (error) {
+          console.error("Error updating logs:", error);
+          logContainer.innerHTML =
+            "<div class='error'>Error updating logs: " + error.message + "</div>";
         }
       };
 
       // Log a message from the renderer
       const logFromRenderer = (level, message, data) => {
         console.log(`Renderer log (${level}): ${message}`, data || "");
-        window.api.log(level, message, data);
-        updateLogUI();
+        try {
+          if (window.api && window.api.log) {
+            window.api.log(level, message, data);
+            updateLogUI();
+          } else {
+            console.error("API not available for logging");
+          }
+        } catch (error) {
+          console.error(`Error logging to main process: ${error.message}`);
+        }
       };
 
       // Initialize when the DOM is loaded

@@ -108,7 +108,9 @@ const createWindow = (): void => {
     width: 1000,
     height: 800,
     webPreferences: {
-      preload: path.join(currentDirPath, "../preload/index.js"),
+      preload: isDevelopment()
+        ? path.join(process.cwd(), "out/preload/index.mjs")
+        : path.join(currentDirPath, "../preload/index.js"),
       contextIsolation: true,
       nodeIntegration: false,
     },
