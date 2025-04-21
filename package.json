@@ -8,10 +8,10 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "npm run build && electron-forge start",
-    "package": "npm run build && electron-forge package",
-    "make": "npm run build && electron-forge make",
-    "publish": "npm run build && electron-forge publish",
+    "start": "pnpm run build && electron-forge start",
+    "package": "pnpm run build && electron-forge package",
+    "make": "pnpm run build && electron-forge make",
+    "publish": "pnpm run build && electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
   "keywords": [],
