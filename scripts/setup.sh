@@ -71,18 +71,7 @@ check_requirements() {
     if ! command_exists python3; then
         error_exit "Python 3 is not installed. Please install Python 3 from https://www.python.org/downloads/"
     else
-        PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
-        PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d'.' -f1)
-        PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d'.' -f2)
-
-        if [ "$PYTHON_MAJOR" -lt 3 ] || [ "$PYTHON_MAJOR" -eq 3 -a "$PYTHON_MINOR" -lt 12 ]; then
-            warning_message "Python $PYTHON_VERSION is installed, but Python 3.12 or higher is required."
-            warning_message "Please install Python 3.12 or higher from https://www.python.org/downloads/"
-            warning_message "Or update the Python version requirement in api/pyproject.toml to match your installed version."
-            error_exit "Python version requirement not met"
-        else
-            success_message "Python is installed: $(python3 --version)"
-        fi
+        success_message "Python is installed: $(python3 --version)"
     fi
 
 
@@ -201,8 +190,13 @@ setup_python() {
         info_message "Installing Python dependencies..."
 
         if [ ! -d "api/.venv" ]; then
+            # Create a virtual environment with the Python version specified in pyproject.toml
             uv venv api/.venv || error_exit "Failed to create virtual environment"
             success_message "Created virtual environment at api/.venv"
+
+            # Log the Python version in the virtual environment
+            VENV_PYTHON_VERSION=$(api/.venv/bin/python --version 2>&1)
+            info_message "Virtual environment Python version: ${VENV_PYTHON_VERSION}"
         fi
 
         if [ -f "api/pyproject.toml" ]; then
