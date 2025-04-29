@@ -207,17 +207,34 @@ const createWindow = (): void => {
     mainWindow.loadFile(path.join(currentDirPath, "../renderer/index.html"));
   }
 
-  // Uncomment the following lines if you need to debug the main process on startup
-  // if (isDevelopment()) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  if (isDevelopment()) {
+    mainWindow.webContents.openDevTools({
+      activate: false,
+      mode: "undocked",
+    });
+  }
 
   logger.info("Main window created");
 
   mainWindow.on("closed", () => {
     logger.info("Main window closed");
+
+    if (apiProcess) {
+      logger.info("Killing API process on window close");
+      apiProcess.kill();
+      apiProcess = null;
+      apiPort = null;
+    }
+
     mainWindow = null;
     global.mainWindow = null;
+
+    // In development mode, quit the app when the window is closed
+    // This helps with development workflow by closing the terminal process
+    if (isDevelopment()) {
+      logger.info("Development mode: quitting application on window close");
+      app.quit();
+    }
   });
 };
 

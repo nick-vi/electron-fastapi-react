@@ -1,10 +1,15 @@
 import { cn } from "@renderer/utils/cn";
-import { ButtonHTMLAttributes } from "react";
+import { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "success" | "danger" | "secondary" | "warning";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
+  icon?: ReactNode;
+  statusDot?: {
+    color: "green" | "blue" | "red" | "yellow" | "purple";
+    animate?: boolean;
+  };
 };
 
 export function Button({
@@ -14,38 +19,78 @@ export function Button({
   className,
   disabled,
   isLoading = false,
+  icon,
+  statusDot,
   ...props
-}: ButtonProps) {
+}: Props) {
   const baseStyles =
-    "cursor-pointer inline-flex items-center justify-center rounded-md font-semibold shadow-sm transition-all duration-200 focus:outline-none";
+    "cursor-pointer inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200 focus:outline-none";
 
   const sizeStyles = {
-    sm: "px-3 py-1.5 text-xs",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-6 py-3 text-base",
+    sm: "px-2 py-1 text-xs gap-1.5",
+    md: "px-3 py-1.5 text-sm gap-2",
+    lg: "px-4 py-2 text-base gap-2",
   };
 
+  // Console-style buttons with hover effect
   const variantStyles = {
     primary:
-      disabled || isLoading
-        ? "bg-indigo-400/50 text-white/70 cursor-not-allowed"
-        : "bg-indigo-500 text-white hover:bg-indigo-400 hover:shadow-md",
+      disabled || isLoading ? "text-white/50 cursor-not-allowed" : "text-white hover:bg-white/10",
     secondary:
       disabled || isLoading
-        ? "bg-slate-400/50 text-white/70 cursor-not-allowed"
-        : "bg-slate-500 text-white hover:bg-slate-400 hover:shadow-md",
+        ? "text-white/50 cursor-not-allowed"
+        : "text-white/80 hover:bg-white/10",
     success:
       disabled || isLoading
-        ? "bg-emerald-400/30 text-white/70 cursor-not-allowed"
-        : "bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md",
+        ? "text-green-400/50 cursor-not-allowed"
+        : "text-green-400 hover:bg-white/10",
     danger:
       disabled || isLoading
-        ? "bg-red-400/30 text-white/70 cursor-not-allowed"
-        : "bg-red-600 text-white hover:bg-red-500 hover:shadow-md",
+        ? "text-red-400/50 cursor-not-allowed"
+        : "text-red-400 hover:bg-white/10",
     warning:
       disabled || isLoading
-        ? "bg-amber-400/30 text-white/70 cursor-not-allowed"
-        : "bg-amber-500 text-white hover:bg-amber-400 hover:shadow-md",
+        ? "text-yellow-400/50 cursor-not-allowed"
+        : "text-yellow-400 hover:bg-white/10",
+  };
+
+  const renderStatusDot = () => {
+    if (!statusDot) return null;
+
+    const bgColorMap = {
+      green: "bg-green-400",
+      blue: "bg-blue-400",
+      red: "bg-red-400",
+      yellow: "bg-yellow-400",
+      purple: "bg-purple-400",
+    };
+
+    const solidColorMap = {
+      green: "bg-green-500",
+      blue: "bg-blue-500",
+      red: "bg-red-500",
+      yellow: "bg-yellow-500",
+      purple: "bg-purple-500",
+    };
+
+    return (
+      <div className="relative flex h-3 w-3 mr-1">
+        {statusDot.animate && (
+          <span
+            className={cn(
+              "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+              bgColorMap[statusDot.color]
+            )}
+          />
+        )}
+        <span
+          className={cn(
+            "relative inline-flex h-3 w-3 rounded-full",
+            solidColorMap[statusDot.color]
+          )}
+        />
+      </div>
+    );
   };
 
   return (
@@ -54,23 +99,16 @@ export function Button({
       disabled={disabled || isLoading}
       {...props}
     >
-      {isLoading && (
-        <svg className="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          ></circle>
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-      )}
+      {isLoading ? (
+        <div className="relative flex h-3 w-3 mr-1">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 bg-blue-400" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-blue-500" />
+        </div>
+      ) : statusDot ? (
+        renderStatusDot()
+      ) : icon ? (
+        <span className="flex items-center justify-center">{icon}</span>
+      ) : null}
       {children}
     </button>
   );

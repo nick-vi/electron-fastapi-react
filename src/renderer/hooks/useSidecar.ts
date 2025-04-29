@@ -1,24 +1,93 @@
 import { logger } from "@renderer/features/console/logger";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/**
+ * Object containing all possible states of the API sidecar
+ */
 export const ServerStatus = {
+  /** API is in the process of starting */
   STARTING: "STARTING",
+
+  /** API is running and ready to accept requests */
   OK: "OK",
+
+  /** API is not running */
   STOPPED: "STOPPED",
+
+  /** API encountered an error */
   ERROR: "ERROR",
+
+  /** API is in the process of stopping */
   STOPPING: "STOPPING",
+
+  /** API is in the process of restarting */
   RESTARTING: "RESTARTING",
 } as const;
 
+/** Type representing the possible states of the API sidecar */
 export type ServerStatus = (typeof ServerStatus)[keyof typeof ServerStatus];
 
+/**
+ * Check if the API is in an error state
+ * @param status Current status of the API
+ * @returns True if the API is in an error state
+ */
 export const isError = (status: ServerStatus): boolean => status === ServerStatus.ERROR;
+
+/**
+ * Check if the API is in the process of starting or restarting
+ * @param status Current status of the API
+ * @returns True if the API is starting or restarting
+ */
 export const isStarting = (status: ServerStatus): boolean =>
   status === ServerStatus.STARTING || status === ServerStatus.RESTARTING;
+
+/**
+ * Check if the API is running and ready
+ * @param status Current status of the API
+ * @returns True if the API is running and ready
+ */
 export const isOk = (status: ServerStatus): boolean => status === ServerStatus.OK;
+
+/**
+ * Check if the API is stopped
+ * @param status Current status of the API
+ * @returns True if the API is stopped
+ */
 export const isStopped = (status: ServerStatus): boolean => status === ServerStatus.STOPPED;
+
+/**
+ * Check if the API is in the process of stopping
+ * @param status Current status of the API
+ * @returns True if the API is stopping
+ */
 export const isStopping = (status: ServerStatus): boolean => status === ServerStatus.STOPPING;
 
+/**
+ * Hook for managing the API sidecar lifecycle
+ *
+ * This hook provides a unified interface for starting, stopping, and monitoring
+ * the API sidecar process. It handles all the complexity of managing the API
+ * lifecycle, including state management, error handling, and IPC communication.
+ *
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const { isOk, isStarting, error, start, stop } = useSidecar();
+ *
+ *   return (
+ *     <div>
+ *       <p>Status: {isOk ? 'Running' : 'Stopped'}</p>
+ *       <button onClick={start} disabled={isOk || isStarting}>Start API</button>
+ *       <button onClick={stop} disabled={!isOk}>Stop API</button>
+ *       {error && <p>Error: {error}</p>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @returns An object containing the API state and control methods
+ */
 export function useSidecar() {
   const [status, setStatus] = useState<ServerStatus>(ServerStatus.STOPPED);
   const [port, setPort] = useState<number | null>(null);
@@ -235,22 +304,65 @@ export function useSidecar() {
     }
   }, [status, port, error]);
 
+  /**
+   * @returns {Object} The sidecar API state and control methods
+   */
   return {
+    /** @type {ServerStatus} Current status of the API sidecar */
     status,
+
+    /** @type {number|null} Port number the API is running on, or null if not running */
     port,
+
+    /** @type {string|null} Error message if an error occurred, or null if no error */
     error,
+
+    /** @type {boolean} Whether the API is currently loading/processing a request */
     isLoading,
+
+    /** @type {boolean} Whether the API is in an error state */
     isError: isError(status),
+
+    /** @type {boolean} Whether the API is running and ready to accept requests */
     isOk: isOk(status),
+
+    /** @type {boolean} Whether the API is in the process of starting */
     isStarting: isStarting(status),
+
+    /** @type {boolean} Whether the API is stopped (not running) */
     isStopped: isStopped(status),
+
+    /** @type {boolean} Whether the API is in the process of stopping */
     isStopping: isStopping(status),
+
+    /** @type {string} Human-readable status message for display */
     statusDisplay: getStatusDisplay(),
 
+    /**
+     * Start the API sidecar
+     * @returns {Promise<number>} A promise that resolves to the port number when the API is started
+     * @throws {Error} If the API fails to start
+     */
     start,
+
+    /**
+     * Stop the API sidecar
+     * @returns {Promise<void>} A promise that resolves when the API is stopped
+     * @throws {Error} If the API fails to stop
+     */
     stop,
+
+    /**
+     * Restart the API sidecar
+     * @returns {Promise<number>} A promise that resolves to the port number when the API is restarted
+     * @throws {Error} If the API fails to restart
+     */
     restart,
 
+    /**
+     * Manually update the server status
+     * This is called automatically on an interval, but can be called manually if needed
+     */
     updateServerStatus,
   };
 }

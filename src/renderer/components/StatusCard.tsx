@@ -2,7 +2,7 @@ import { cn } from "@renderer/utils/cn";
 import { ComponentType } from "react";
 import { IconProps } from "./icons/icon.types";
 
-type StatusCardProps = {
+type Props = {
   title: string;
   value: string;
   icon: ComponentType<IconProps>;
@@ -11,57 +11,50 @@ type StatusCardProps = {
   iconClassName?: string;
 };
 
-export function StatusCard({
-  title,
-  value,
-  icon: Icon,
-  variant,
-  className,
-  iconClassName,
-}: StatusCardProps) {
+export function StatusCard({ title, value, icon: Icon, variant, className, iconClassName }: Props) {
   const getVariantStyles = () => {
     switch (variant) {
       case "success":
         return {
-          card: "border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/50",
-          container: "bg-emerald-100 shadow-emerald-200/50",
-          indicator: "bg-emerald-500 shadow-emerald-400/50",
-          text: "text-emerald-600",
+          card: "border-emerald-500/20 bg-emerald-900/10",
+          container: "bg-emerald-800/30",
+          indicator: "bg-emerald-500",
+          text: "text-emerald-400",
         };
       case "info":
         return {
-          card: "border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50",
-          container: "bg-blue-100 shadow-blue-200/50",
-          indicator: "bg-blue-500 shadow-blue-400/50",
-          text: "text-blue-600",
+          card: "border-blue-500/20 bg-blue-900/10",
+          container: "bg-blue-800/30",
+          indicator: "bg-blue-500",
+          text: "text-blue-400",
         };
       case "warning":
         return {
-          card: "border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/50",
-          container: "bg-amber-100 shadow-amber-200/50",
-          indicator: "bg-amber-500 shadow-amber-400/50",
-          text: "text-amber-600",
+          card: "border-amber-500/20 bg-amber-900/10",
+          container: "bg-amber-800/30",
+          indicator: "bg-amber-500",
+          text: "text-amber-400",
         };
       case "error":
         return {
-          card: "border-red-200 bg-gradient-to-br from-red-50 to-red-100/50",
-          container: "bg-red-100 shadow-red-200/50",
-          indicator: "bg-red-500 shadow-red-400/50",
-          text: "text-red-600",
+          card: "border-red-500/20 bg-red-900/10",
+          container: "bg-red-800/30",
+          indicator: "bg-red-500",
+          text: "text-red-400",
         };
       case "stopping":
         return {
-          card: "border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100/50",
-          container: "bg-purple-100 shadow-purple-200/50",
-          indicator: "bg-purple-500 shadow-purple-400/50",
-          text: "text-purple-600",
+          card: "border-purple-500/20 bg-purple-900/10",
+          container: "bg-purple-800/30",
+          indicator: "bg-purple-500",
+          text: "text-purple-400",
         };
       default:
         return {
-          card: "border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/50",
-          container: "bg-slate-100 shadow-slate-200/50",
-          indicator: "bg-slate-500 shadow-slate-400/50",
-          text: "text-slate-600",
+          card: "border-slate-500/20 bg-slate-900/10",
+          container: "bg-slate-800/30",
+          indicator: "bg-slate-500",
+          text: "text-slate-400",
         };
     }
   };
@@ -71,37 +64,37 @@ export function StatusCard({
   return (
     <div
       className={cn(
-        "flex items-center rounded-xl border p-5 shadow-md transition-all duration-200",
+        "flex items-center rounded-lg border p-4 shadow-md transition-all duration-200 bg-indigo-900/30",
         styles.card,
         className
       )}
     >
       <div
         className={cn(
-          "mr-4 flex h-12 w-12 items-center justify-center rounded-full shadow-inner",
+          "mr-3 flex h-10 w-10 items-center justify-center rounded-lg",
           styles.container
         )}
       >
         <Icon
-          className={cn("h-6 w-6", iconClassName)}
+          className={cn("h-5 w-5", iconClassName)}
           color={
             variant === "success"
-              ? "rgb(16, 185, 129)" // emerald-500
+              ? "rgb(74, 222, 128)" // green-400
               : variant === "info"
-                ? "rgb(59, 130, 246)" // blue-500
+                ? "rgb(96, 165, 250)" // blue-400
                 : variant === "warning"
-                  ? "rgb(245, 158, 11)" // amber-500
+                  ? "rgb(251, 191, 36)" // amber-400
                   : variant === "error"
-                    ? "rgb(239, 68, 68)" // red-500
+                    ? "rgb(248, 113, 113)" // red-400
                     : variant === "stopping"
-                      ? "rgb(168, 85, 247)" // purple-500
-                      : "rgb(100, 116, 139)" // slate-500
+                      ? "rgb(192, 132, 252)" // purple-400
+                      : "rgb(148, 163, 184)" // slate-400
           }
         />
       </div>
       <div>
-        <p className="text-sm font-semibold text-gray-700">{title}</p>
-        <p className={cn("text-base font-medium", styles.text)}>{value}</p>
+        <p className="text-xs font-semibold text-white/80">{title}</p>
+        <p className={cn("text-sm font-medium", styles.text)}>{value}</p>
       </div>
     </div>
   );

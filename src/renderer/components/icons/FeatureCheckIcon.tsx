@@ -4,7 +4,7 @@ import { IconProps } from "./icon.types";
 export default function FeatureCheckIcon({ className, color }: IconProps) {
   return (
     <svg
-      className={cn("mr-2 h-5 w-5", className)}
+      className={cn("h-5 w-5", className)}
       fill="none"
       stroke={color || "currentColor"}
       viewBox="0 0 24 24"

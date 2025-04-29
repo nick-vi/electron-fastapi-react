@@ -52,25 +52,26 @@ const MainContent = () => {
   };
 
   return (
-    <div className="flex-1 overflow-auto p-6">
+    <div className="flex-1 overflow-auto p-4 text-white">
       <div className="mx-auto max-w-5xl">
-        <header className="mb-8 rounded-xl bg-gradient-to-br from-indigo-800 via-blue-700 to-indigo-900 p-8 shadow-md border border-indigo-500/20">
+        <header className="mb-8 rounded-xl bg-indigo-900/90 p-6 shadow-md border border-white/20">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="mb-4 md:mb-0">
-              <h1 className="text-3xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-white tracking-tight">
                 Electron FastAPI Sidecar
               </h1>
               <p className="mt-2 text-indigo-200 font-medium">
                 A template for building Electron apps with FastAPI Python backends
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               <Button
                 onClick={handleStart}
                 disabled={isOk || isStarting || isLoading}
                 variant="primary"
                 size="md"
                 isLoading={isStarting}
+                statusDot={isStarting ? { color: "blue", animate: true } : undefined}
               >
                 {isStarting ? "Starting..." : "Start API"}
               </Button>
@@ -79,7 +80,7 @@ const MainContent = () => {
                 disabled={!isOk || isLoading}
                 variant="danger"
                 size="md"
-                isLoading={isStopping}
+                statusDot={isStopping ? { color: "red", animate: true } : undefined}
               >
                 {isStopping ? "Stopping..." : "Stop API"}
               </Button>
@@ -88,7 +89,9 @@ const MainContent = () => {
                 disabled={!isOk || isLoading}
                 variant="success"
                 size="md"
-                isLoading={status === ServerStatus.RESTARTING}
+                statusDot={
+                  status === ServerStatus.RESTARTING ? { color: "green", animate: true } : undefined
+                }
               >
                 {status === ServerStatus.RESTARTING ? "Restarting..." : "Restart API"}
               </Button>
@@ -133,18 +136,22 @@ const MainContent = () => {
         {(isStopped || isError) && !isStarting && (
           <div
             className={cn(
-              "mb-6 rounded-xl border p-4 shadow-md",
+              "mb-6 rounded-lg border p-3 shadow-md",
               isError
-                ? "border-red-200 bg-gradient-to-br from-red-50 to-red-100/50 text-red-800"
-                : "border-yellow-200 bg-gradient-to-br from-yellow-50 to-yellow-100/50 text-yellow-800"
+                ? "border-red-500/20 bg-red-900/10 text-red-400"
+                : "border-yellow-500/20 bg-yellow-900/10 text-yellow-400"
             )}
           >
-            <div className="flex items-center">
-              <AlertTriangleIcon
-                className="mr-3"
-                color={isError ? "rgb(239, 68, 68)" : "rgb(245, 158, 11)"}
-              />
-              <p>
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-lg",
+                  isError ? "bg-red-800/30" : "bg-yellow-800/30"
+                )}
+              >
+                <AlertTriangleIcon color={isError ? "rgb(248, 113, 113)" : "rgb(251, 191, 36)"} />
+              </div>
+              <p className="text-sm">
                 {isError
                   ? `Error: ${error || "An unknown error occurred"}`
                   : "The API server is not running. Click the Start API button above to start it."}
@@ -153,28 +160,28 @@ const MainContent = () => {
           </div>
         )}
 
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-md">
-          <div className="border-b border-slate-200 bg-slate-50/80 px-6 py-4">
-            <h2 className="text-xl font-semibold text-gray-800">Features</h2>
+        <div className="overflow-hidden rounded-lg border border-white/20 bg-indigo-900/30 shadow-md">
+          <div className="border-b border-white/20 bg-indigo-900/50 px-4 py-3">
+            <h2 className="text-lg font-semibold text-white">Features</h2>
           </div>
-          <div className="p-6">
-            <ul className="grid gap-4 sm:grid-cols-2">
-              <li className="flex items-start">
-                <FeatureCheckIcon color="rgb(34, 197, 94)" />
-                <span>Electron + React frontend</span>
-              </li>
-              <li className="flex items-start">
-                <FeatureCheckIcon color="rgb(34, 197, 94)" />
-                <span>FastAPI Python backend</span>
-              </li>
-              <li className="flex items-start">
-                <FeatureCheckIcon color="rgb(34, 197, 94)" />
-                <span>TypeScript support</span>
-              </li>
-              <li className="flex items-start">
-                <FeatureCheckIcon color="rgb(34, 197, 94)" />
-                <span>Tailwind CSS styling</span>
-              </li>
+          <div className="p-4">
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {[
+                "Electron + React frontend",
+                "FastAPI Python backend",
+                "TypeScript support",
+                "Tailwind CSS styling",
+              ].map((feature, index) => (
+                <li
+                  key={index}
+                  className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-green-800/30 border border-green-500/20">
+                    <FeatureCheckIcon className="h-4 w-4" color="rgb(74, 222, 128)" />
+                  </div>
+                  <span className="text-sm font-medium text-white/90">{feature}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -185,7 +192,7 @@ const MainContent = () => {
 
 export const App = () => {
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-50">
+    <div className="flex h-screen flex-col overflow-hidden bg-gray-900">
       <ErrorBoundaryWithConsole>
         <MainContent />
       </ErrorBoundaryWithConsole>
