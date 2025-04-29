@@ -95,20 +95,57 @@ contextBridge.exposeInMainWorld("api", {
   },
 
   /**
+   * Stop the API sidecar process
+   */
+  stopApiSidecar: async (): Promise<boolean> => {
+    const result = await ipcRenderer.invoke("stop-api-sidecar");
+    apiPort = null;
+    return result;
+  },
+
+  /**
+   * Restart the API sidecar process
+   */
+  restartApiSidecar: async (): Promise<number> => {
+    const port = await ipcRenderer.invoke("restart-api-sidecar");
+    if (port === null) {
+      throw new Error("Failed to restart API sidecar: port is null");
+    }
+    apiPort = port;
+    return port;
+  },
+
+  /**
    * Check if the API is ready by calling the health endpoint
    */
   checkApiReady: async (): Promise<boolean> => {
     try {
+      // Get the latest port from the main process
+      const latestPort = await ipcRenderer.invoke("get-api-port");
+
+      // Update our local port if it's different
+      if (latestPort !== null && latestPort !== apiPort) {
+        apiPort = latestPort;
+      }
+
       if (!apiPort) {
+        // No port means the API is definitely not running
         return false;
       }
-      const response = await fetch(`http://127.0.0.1:${apiPort}/health`, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(500), // Timeout after 500ms
-      });
-      return response.ok;
+
+      try {
+        const response = await fetch(`http://127.0.0.1:${apiPort}/health`, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(500), // Timeout after 500ms
+        });
+        return response.ok;
+      } catch (fetchError) {
+        // Connection errors mean the API is not running
+        return false;
+      }
     } catch (error) {
+      // This would be an error with the IPC call, not the API itself
       console.error("Error checking API readiness:", error);
       return false;
     }
@@ -137,5 +174,20 @@ contextBridge.exposeInMainWorld("api", {
     return () => {
       ipcRenderer.removeListener("api-process-exited", listener);
     };
+  },
+
+  /**
+   * Get the API port from the main process
+   */
+  getApiPort: async (): Promise<number | null> => {
+    // Get the latest port from the main process
+    const port = await ipcRenderer.invoke("get-api-port");
+
+    // Update our local port if it's different
+    if (port !== null && port !== apiPort) {
+      apiPort = port;
+    }
+
+    return apiPort;
   },
 });

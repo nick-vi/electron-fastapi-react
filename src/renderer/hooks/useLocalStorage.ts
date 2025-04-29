@@ -2,6 +2,13 @@ import { logger } from "@renderer/logger";
 import { useCallback, useEffect, useState } from "react";
 
 /**
+ * Check if the key is a debug key
+ */
+function isDebugKey(key: string) {
+  return key.startsWith("debug-console");
+}
+
+/**
  * Custom hook for handling local storage with real-time updates
  */
 export function useLocalStorage<T>(
@@ -13,8 +20,8 @@ export function useLocalStorage<T>(
 
     try {
       const item = window.localStorage.getItem(key);
-      // Only log debug for non-standard keys to reduce noise
-      if (!key.startsWith("debug-console")) {
+
+      if (!isDebugKey(key)) {
         logger.debug(`Reading ${key}`, { key, value: item || "not found" });
       }
       if (!item) return initialValue;
@@ -43,8 +50,7 @@ export function useLocalStorage<T>(
       try {
         const valueToStore = value instanceof Function ? value(storedValue) : value;
 
-        // Only log debug for non-standard keys to reduce noise
-        if (!key.startsWith("debug-console")) {
+        if (!isDebugKey(key)) {
           logger.debug(`Setting ${key}`, {
             key,
             oldValue: storedValue,
@@ -74,8 +80,8 @@ export function useLocalStorage<T>(
         const storageEvent = e as StorageEvent;
         if (storageEvent.key === key || storageEvent.key === null) {
           const newValue = readValue();
-          // Only log debug for non-standard keys to reduce noise
-          if (!key.startsWith("debug-console")) {
+
+          if (!isDebugKey(key)) {
             logger.debug(`Storage event for ${key}`, { key, newValue });
           }
           setStoredValue(newValue);
@@ -86,8 +92,8 @@ export function useLocalStorage<T>(
       const customEvent = e as CustomEvent;
       if (!customEvent.detail || customEvent.detail.key === key) {
         const newValue = readValue();
-        // Only log debug for non-standard keys to reduce noise
-        if (!key.startsWith("debug-console")) {
+
+        if (!isDebugKey(key)) {
           logger.debug(`Custom event for ${key}`, { key, newValue });
         }
         setStoredValue(newValue);

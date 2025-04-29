@@ -12,7 +12,7 @@ All other dependencies (Python, pnpm, uv, etc.) will be installed automatically.
 
 ```bash
 # Install dependencies
-pnpm install
+pnpm dev-setup
 
 # Start development
 pnpm dev

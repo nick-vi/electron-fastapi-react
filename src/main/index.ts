@@ -221,6 +221,29 @@ const createWindow = (): void => {
 };
 
 /**
+ * Stop the FastAPI sidecar process
+ */
+const stopApiSidecar = (): void => {
+  if (apiProcess) {
+    logger.info("Stopping API sidecar process");
+    apiProcess.kill();
+    apiProcess = null;
+    apiPort = null;
+  } else {
+    logger.info("No API sidecar process to stop");
+  }
+};
+
+/**
+ * Restart the FastAPI sidecar process
+ */
+const restartApiSidecar = async (): Promise<void> => {
+  logger.info("Restarting API sidecar process");
+  stopApiSidecar();
+  await startApiSidecar();
+};
+
+/**
  * Set up IPC handlers
  */
 const setupIPC = (): void => {
@@ -229,6 +252,18 @@ const setupIPC = (): void => {
   ipcMain.handle("start-api-sidecar", async () => {
     logger.info("Starting API sidecar from renderer request");
     await startApiSidecar();
+    return apiPort;
+  });
+
+  ipcMain.handle("stop-api-sidecar", () => {
+    logger.info("Stopping API sidecar from renderer request");
+    stopApiSidecar();
+    return true;
+  });
+
+  ipcMain.handle("restart-api-sidecar", async () => {
+    logger.info("Restarting API sidecar from renderer request");
+    await restartApiSidecar();
     return apiPort;
   });
 

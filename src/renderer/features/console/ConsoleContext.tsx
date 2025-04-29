@@ -26,8 +26,6 @@ type ConsoleContextType = {
   showFilters: boolean;
   showMenu: boolean;
   activeFilters: LogLevel[];
-  serverStatus: string;
-  apiPort: number | null;
   isMobile: boolean;
 
   pushLog: (log: ConsoleLog) => void;
@@ -37,8 +35,6 @@ type ConsoleContextType = {
   toggleFilter: (level: LogLevel) => void;
   toggleFiltersPanel: () => void;
   toggleMenu: () => void;
-  updateStatus: () => void;
-  updateServerStatus: () => void;
   checkState: () => void;
 };
 
@@ -88,8 +84,6 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
 export function ConsoleProvider({ children }: ConsoleProviderProps) {
   const [logs, setLogs] = useState<ConsoleLog[]>([]);
-  const [serverStatus, setServerStatus] = useState<string>("Starting...");
-  const [apiPort, setApiPort] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [showMenu, setShowMenu] = useState<boolean>(false);
 
@@ -103,17 +97,6 @@ export function ConsoleProvider({ children }: ConsoleProviderProps) {
   ]);
 
   const filteredLogs = logs.filter((log) => activeFilters.includes(log.status));
-
-  useEffect(() => {
-    const handleApiReady = (port: number) => {
-      setApiPort(port);
-      // Always set to OK when API is ready, regardless of previous state
-      setServerStatus("OK");
-    };
-
-    const cleanup = window.api.onApiReady(handleApiReady);
-    return cleanup;
-  }, []);
 
   const pushLog = useCallback((log: ConsoleLog) => {
     setLogs((prevLogs) =>
@@ -154,35 +137,6 @@ export function ConsoleProvider({ children }: ConsoleProviderProps) {
     setShowMenu((prev) => !prev);
   }, []);
 
-  const updateStatus = useCallback(async () => {
-    try {
-      await window.api.checkApiReady();
-    } catch (error) {
-      console.error("Failed to check API status", error);
-    }
-  }, []);
-
-  const updateServerStatus = useCallback(() => {
-    window.api
-      .checkApiReady()
-      .then((isReady) => {
-        // Only set to ERROR if we've already tried to start the API
-        // Otherwise keep it as "Starting..."
-        if (isReady) {
-          setServerStatus("OK");
-        } else if (serverStatus !== "Starting...") {
-          setServerStatus("ERROR");
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to update server status", error);
-        // Only set to ERROR if we've already tried to start the API
-        if (serverStatus !== "Starting...") {
-          setServerStatus("ERROR");
-        }
-      });
-  }, [serverStatus]);
-
   const checkState = useCallback(async () => {
     setIsExpanded(true);
 
@@ -203,10 +157,6 @@ export function ConsoleProvider({ children }: ConsoleProviderProps) {
   }, [pushLog, setIsExpanded]);
 
   useEffect(() => {
-    updateServerStatus();
-
-    const serverStatusInterval = window.setInterval(updateServerStatus, 30000);
-
     const logCleanup = window.api.onLogEntry((entry) => {
       pushLog({
         timestamp: Date.now(),
@@ -217,10 +167,9 @@ export function ConsoleProvider({ children }: ConsoleProviderProps) {
     });
 
     return () => {
-      window.clearInterval(serverStatusInterval);
       logCleanup();
     };
-  }, [pushLog, updateServerStatus]);
+  }, [pushLog]);
 
   const isMobile = typeof window !== "undefined" ? window.isMobileState || false : false;
 
@@ -232,8 +181,6 @@ export function ConsoleProvider({ children }: ConsoleProviderProps) {
     showFilters,
     showMenu,
     activeFilters,
-    serverStatus,
-    apiPort,
     isMobile,
 
     pushLog,
@@ -243,8 +190,6 @@ export function ConsoleProvider({ children }: ConsoleProviderProps) {
     toggleFilter,
     toggleFiltersPanel,
     toggleMenu,
-    updateStatus,
-    updateServerStatus,
     checkState,
   };
 

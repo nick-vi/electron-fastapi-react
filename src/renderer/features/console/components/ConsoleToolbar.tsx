@@ -1,4 +1,5 @@
 import { FilterIcon, MinimizeIcon, TrashIcon } from "@renderer/components/icons";
+import { useSidecar } from "@renderer/hooks/useSidecar";
 import { cn } from "@renderer/utils/cn";
 import { useConsole } from "../ConsoleContext";
 
@@ -7,7 +8,6 @@ import { useConsole } from "../ConsoleContext";
  */
 export function ConsoleToolbar() {
   const {
-    apiPort,
     showFilters,
     toggleFiltersPanel,
     activeFilters,
@@ -16,6 +16,7 @@ export function ConsoleToolbar() {
     logs,
     isMobile,
   } = useConsole();
+  const { port, isOk } = useSidecar();
   return (
     <div
       className={cn(
@@ -24,14 +25,14 @@ export function ConsoleToolbar() {
       )}
     >
       <div className="flex items-center gap-1">
-        <span className="font-bold">API:</span>
+        <span className="font-bold">Port:</span>
         <span
           className={cn(
             "h-6 w-14 rounded-md bg-white/10 px-2 py-1 text-center font-mono",
-            !apiPort && "animate-pulse"
+            !isOk && "animate-pulse"
           )}
         >
-          {apiPort || "..."}
+          {isOk && port ? port : "..."}
         </span>
       </div>
 

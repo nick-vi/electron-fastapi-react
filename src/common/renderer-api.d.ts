@@ -41,6 +41,16 @@ export type ElectronAPI = {
   startApiSidecar: () => Promise<number>;
 
   /**
+   * Stop the API sidecar process
+   */
+  stopApiSidecar: () => Promise<boolean>;
+
+  /**
+   * Restart the API sidecar process
+   */
+  restartApiSidecar: () => Promise<number>;
+
+  /**
    * Check if the API is ready
    */
   checkApiReady: () => Promise<boolean>;

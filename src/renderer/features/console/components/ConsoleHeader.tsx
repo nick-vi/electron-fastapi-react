@@ -1,4 +1,5 @@
 import { ChevronUpIcon, MenuIcon, RefreshCwIcon } from "@renderer/components/icons";
+import { ServerStatus, useSidecar } from "@renderer/hooks/useSidecar";
 import { cn } from "@renderer/utils/cn";
 import { useConsole } from "../ConsoleContext";
 
@@ -32,11 +33,25 @@ export function ConsoleHeader() {
   );
 }
 
+function getStatusDisplay(status: ServerStatus) {
+  switch (status) {
+    case ServerStatus.OK:
+      return "Online";
+    case ServerStatus.STARTING:
+      return "Starting...";
+    case ServerStatus.STOPPED:
+      return "Stopped";
+    default:
+      return "Error";
+  }
+}
+
 /**
  * Button to display and update server status
  */
 function ServerStatusButton() {
-  const { serverStatus, updateServerStatus } = useConsole();
+  const { isOk, isStarting, isError, status, updateServerStatus } = useSidecar();
+
   return (
     <button
       className="flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-white/10"
@@ -51,34 +66,40 @@ function ServerStatusButton() {
           <span
             className={cn(
               "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-              serverStatus === "OK"
+              isOk
                 ? "bg-green-400"
-                : serverStatus === "Starting..."
+                : isStarting
                   ? "bg-blue-400"
-                  : "bg-red-400"
+                  : isError
+                    ? "bg-red-400"
+                    : "bg-yellow-400"
             )}
           ></span>
           <span
             className={cn(
               "relative inline-flex h-2 w-2 rounded-full",
-              serverStatus === "OK"
+              isOk
                 ? "bg-green-500"
-                : serverStatus === "Starting..."
+                : isStarting
                   ? "bg-blue-500"
-                  : "bg-red-500"
+                  : isError
+                    ? "bg-red-500"
+                    : "bg-yellow-500"
             )}
           ></span>
         </div>
         <span
           className={cn(
-            serverStatus === "OK"
+            isOk
               ? "text-green-400"
-              : serverStatus === "Starting..."
+              : isStarting
                 ? "text-blue-400"
-                : "text-red-400"
+                : isError
+                  ? "text-red-400"
+                  : "text-yellow-400"
           )}
         >
-          {serverStatus === "OK" ? "Online" : serverStatus}
+          {getStatusDisplay(status)}
         </span>
       </div>
     </button>
