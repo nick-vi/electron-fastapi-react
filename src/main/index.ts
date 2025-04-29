@@ -207,9 +207,10 @@ const createWindow = (): void => {
     mainWindow.loadFile(path.join(currentDirPath, "../renderer/index.html"));
   }
 
-  if (process.env.NODE_ENV === "development") {
-    mainWindow.webContents.openDevTools();
-  }
+  // Uncomment the following lines if you need to debug the main process on startup
+  // if (isDevelopment()) {
+  //   mainWindow.webContents.openDevTools();
+  // }
 
   logger.info("Main window created");
 
