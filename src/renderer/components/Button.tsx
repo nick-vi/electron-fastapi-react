@@ -1,7 +1,8 @@
+import { cn } from "@renderer/utils/cn";
 import { ButtonHTMLAttributes } from "react";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "success" | "danger" | "secondary";
+  variant?: "primary" | "success" | "danger" | "secondary" | "warning";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
 };
@@ -10,30 +11,46 @@ export function Button({
   children,
   variant = "primary",
   size = "md",
-  className = "",
+  className,
   disabled,
   isLoading = false,
   ...props
 }: ButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+    "cursor-pointer inline-flex items-center justify-center rounded-md font-semibold shadow-sm transition-all duration-200 focus:outline-none";
 
   const sizeStyles = {
-    sm: "h-8 px-3 text-xs",
-    md: "h-10 px-4 py-2 text-sm",
-    lg: "h-12 px-6 py-3 text-base",
+    sm: "px-3 py-1.5 text-xs",
+    md: "px-5 py-2.5 text-sm",
+    lg: "px-6 py-3 text-base",
   };
 
   const variantStyles = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
-    secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500",
-    success: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500",
-    danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+    primary:
+      disabled || isLoading
+        ? "bg-indigo-400/50 text-white/70 cursor-not-allowed"
+        : "bg-indigo-500 text-white hover:bg-indigo-400 hover:shadow-md",
+    secondary:
+      disabled || isLoading
+        ? "bg-slate-400/50 text-white/70 cursor-not-allowed"
+        : "bg-slate-500 text-white hover:bg-slate-400 hover:shadow-md",
+    success:
+      disabled || isLoading
+        ? "bg-emerald-400/30 text-white/70 cursor-not-allowed"
+        : "bg-emerald-600 text-white hover:bg-emerald-500 hover:shadow-md",
+    danger:
+      disabled || isLoading
+        ? "bg-red-400/30 text-white/70 cursor-not-allowed"
+        : "bg-red-600 text-white hover:bg-red-500 hover:shadow-md",
+    warning:
+      disabled || isLoading
+        ? "bg-amber-400/30 text-white/70 cursor-not-allowed"
+        : "bg-amber-500 text-white hover:bg-amber-400 hover:shadow-md",
   };
 
   return (
     <button
-      className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+      className={cn(baseStyles, sizeStyles[size], variantStyles[variant], className)}
       disabled={disabled || isLoading}
       {...props}
     >
