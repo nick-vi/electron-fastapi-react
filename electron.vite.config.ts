@@ -1,4 +1,6 @@
-import { defineConfig } from "electron-vite";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import { resolve } from "path";
 
 export default defineConfig({
@@ -19,6 +21,7 @@ export default defineConfig({
         "@preload": resolve(__dirname, "src/preload"),
       },
     },
+    plugins: [externalizeDepsPlugin()],
   },
   preload: {
     build: {
@@ -41,6 +44,7 @@ export default defineConfig({
         "@preload": resolve(__dirname, "src/preload"),
       },
     },
+    plugins: [externalizeDepsPlugin()],
   },
   renderer: {
     root: "src/renderer",
@@ -58,6 +62,12 @@ export default defineConfig({
         "@main": resolve(__dirname, "src/main"),
         "@renderer": resolve(__dirname, "src/renderer"),
         "@preload": resolve(__dirname, "src/preload"),
+      },
+    },
+    plugins: [react(), tailwindcss()],
+    server: {
+      watch: {
+        ignored: ["**/node_modules/**", "**/.git/**"],
       },
     },
   },

@@ -18,9 +18,8 @@ pnpm install
 pnpm dev
 
 # Build application
-pnpm build:mac  # For macOS
-pnpm build:win  # For Windows
-pnpm build:linux  # For Linux
+# Because we're using PyInstaller you can only build for the platform you're building on
+pnpm build
 ```
 
 ## Architecture

@@ -27,7 +27,7 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: "./tsconfig.json",
+        projectService: true,
         ecmaVersion: 2022,
         sourceType: "module",
       },
@@ -39,6 +39,7 @@ export default [
         window: true,
         document: true,
         fetch: true,
+        AbortSignal: true,
       },
     },
     plugins: {
@@ -70,6 +71,13 @@ export default [
 
   // Ignore build output and dependencies
   {
-    ignores: ["node_modules/**", "dist/**", "out/**", "app/**", "electron.vite.config.ts"],
+    ignores: [
+      "node_modules/**",
+      "dist/**",
+      "dist-electron/**",
+      "out/**",
+      "app/**",
+      "electron.vite.config.ts",
+    ],
   },
 ];

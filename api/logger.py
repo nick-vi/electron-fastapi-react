@@ -22,13 +22,43 @@ class JSONFormatter(logging.Formatter):
     Custom formatter that outputs log records as JSON for easy parsing by the Electron main process.
     """
 
-    def format(self, record: logging.LogRecord) -> str:
+    def format(self, record: logging.LogRecord) -> str:  # noqa: C901
+        # Determine if this is a Uvicorn log or a regular Python log
+        is_uvicorn = record.name.startswith("uvicorn")
+        source = "uvicorn" if is_uvicorn else "python"
+
+        # Clean up Uvicorn messages
+        message = record.getMessage()
+
+        # Prevent duplicate logs by checking for common patterns
+        if message == "FastAPI server starting" and record.name == "api.main":
+            # Skip duplicate startup logs
+            return ""
+
+        # Handle different Uvicorn log formats
+        if is_uvicorn:
+            # Remove the "INFO:" prefix if present
+            if message.startswith("INFO:"):
+                message = message.replace("INFO:", "", 1).strip()
+
+            # Remove timestamp and logger name from uvicorn.access logs
+            if " - " in message and record.name == "uvicorn.access":
+                parts = message.split(" - ", 1)
+                if len(parts) > 1:
+                    message = parts[1].strip()
+
+            # Remove the logger name prefix from uvicorn logs
+            if " - " in message and message.startswith(record.name):
+                parts = message.split(" - ", 1)
+                if len(parts) > 1:
+                    message = parts[1].strip()
+
         log_data: dict = {
             "timestamp": datetime.datetime.now().isoformat(),
-            "level": record.levelname,
-            "source": "python",
+            "level": record.levelname.lower(),  # Convert to lowercase to match frontend levels
+            "source": source,
             "name": record.name,
-            "message": record.getMessage(),
+            "message": message,
         }
 
         if record.exc_info:

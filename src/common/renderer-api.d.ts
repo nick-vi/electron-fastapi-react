@@ -4,7 +4,6 @@
 
 import type { LogEntry, LogLevel } from "./logger-types";
 
-// Define the API type
 export type ElectronAPI = {
   /**
    * Fetch data from the FastAPI endpoint
@@ -34,11 +33,35 @@ export type ElectronAPI = {
   /**
    * Listen for log entries from the main process
    */
-  onLogEntry: (callback: (entry: LogEntry) => void) => void;
+  onLogEntry: (callback: (entry: LogEntry) => void) => () => void;
+
+  /**
+   * Start the API sidecar process
+   */
+  startApiSidecar: () => Promise<number>;
+
+  /**
+   * Check if the API is ready
+   */
+  checkApiReady: () => Promise<boolean>;
+
+  /**
+   * Listen for API ready events
+   */
+  onApiReady: (callback: (port: number) => void) => () => void;
+
+  /**
+   * Listen for API process exit events
+   */
+  onApiProcessExit: (callback: (exitCode: number) => void) => () => void;
 };
 
 declare global {
   interface Window {
     api: ElectronAPI;
+    /**
+     * Whether the app is running on a mobile device
+     */
+    isMobileState: boolean;
   }
 }

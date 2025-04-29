@@ -15,6 +15,7 @@ export const LogSource = {
   MAIN: "main",
   RENDERER: "renderer",
   PYTHON: "python",
+  UVICORN: "uvicorn",
 } as const;
 
 export type LogSource = (typeof LogSource)[keyof typeof LogSource];
@@ -39,4 +40,15 @@ export const SOURCE_COLORS = {
   [LogSource.MAIN]: "#6610f2",
   [LogSource.RENDERER]: "#fd7e14",
   [LogSource.PYTHON]: "#20c997",
+  [LogSource.UVICORN]: "#17a2b8", // Teal color for Uvicorn
 };
+
+export const isError = (log: LogLevel): boolean => log === LogLevel.ERROR;
+export const isWarning = (log: LogLevel): boolean => log === LogLevel.WARNING;
+export const isInfo = (log: LogLevel): boolean => log === LogLevel.INFO;
+export const isDebug = (log: LogLevel): boolean => log === LogLevel.DEBUG;
+
+export const isMain = (source: LogSource): boolean => source === LogSource.MAIN;
+export const isRenderer = (source: LogSource): boolean => source === LogSource.RENDERER;
+export const isPython = (source: LogSource): boolean => source === LogSource.PYTHON;
+export const isUvicorn = (source: LogSource): boolean => source === LogSource.UVICORN;

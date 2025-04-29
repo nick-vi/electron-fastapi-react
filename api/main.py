@@ -1,8 +1,8 @@
-import os
+import argparse
 import sys
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from logger import get_logger, log_error, log_info, log_warning
@@ -21,33 +21,28 @@ app.add_middleware(
 )
 
 
-app_path = os.environ.get("ELECTRON_APP_PATH", "Unknown")
-if app_path != "Unknown":
-    log_info(f"Application path set to: {app_path}")
-else:
-    log_warning("No application path provided in environment variables")
+parser = argparse.ArgumentParser()
+parser.add_argument("--app-path", help="Path to the Electron app")
+args, _ = parser.parse_known_args()
+
+app_path = args.app_path or "Unknown"
+# Only log a warning if the app path is missing, otherwise it's expected
+if app_path == "Unknown":
+    log_warning("No application path provided in command-line arguments")
 
 
 @app.get("/")
-async def read_root(request: Request) -> dict[str, Any]:
+async def read_root() -> dict[str, Any]:
     """
     Root endpoint that returns a hello world message and the app path.
-
-    Args:
-        request: The incoming request
 
     Returns:
         Dict[str, Any]: A dictionary containing the message and app path
     """
-    client = request.client.host if request.client else "unknown"
-    log_info(f"Received request from {client}")
-
     response_data = {
         "message": "Hello World from FastAPI",
         "app_path": app_path,
     }
-
-    log_info("Sending response", data=response_data)
     return response_data
 
 

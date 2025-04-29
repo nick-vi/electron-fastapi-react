@@ -38,7 +38,7 @@ const startApiSidecar = async (): Promise<void> => {
     if (!apiPort) {
       throw new Error("Failed to get a free port");
     }
-    logger.info(`Using port ${apiPort} for API server`);
+    logger.debug(`Using port ${apiPort} for API server`);
 
     const appPath = app.getAppPath();
 
@@ -50,14 +50,8 @@ const startApiSidecar = async (): Promise<void> => {
         throw new Error(`Python script not found at: ${pythonScript}`);
       }
 
-      logger.info(`Starting Python script directly: ${pythonScript}`);
-
       const uvCommand = process.platform === "win32" ? "uv" : "uv";
       const apiDir = path.join(appPath, "api");
-
-      logger.info(
-        `Running command: ${uvCommand} run ${pythonScript} --app-path ${appPath} --port ${apiPort} --reload --log-level debug in directory ${apiDir}`
-      );
 
       apiProcess = spawn(
         uvCommand,
@@ -77,7 +71,7 @@ const startApiSidecar = async (): Promise<void> => {
           env: {
             ...process.env,
             PYTHONPATH: apiDir,
-            ELECTRON_APP_PATH: appPath,
+            // App path is passed as a command-line argument, not as an environment variable
           },
         }
       );
@@ -115,7 +109,7 @@ const startApiSidecar = async (): Promise<void> => {
         cwd: apiDir,
         env: {
           ...process.env,
-          ELECTRON_APP_PATH: appPath,
+          // App path is passed as a command-line argument, not as an environment variable
         },
       });
     }

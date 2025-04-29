@@ -3,8 +3,7 @@
  * This module provides a standardized way to log messages and display logs from all sources.
  */
 
-import { LOG_COLORS, LogEntry, LogLevel, LogSource, SOURCE_COLORS } from "@common/logger-types";
-// Type definitions are automatically included by TypeScript
+import { LogEntry, LogLevel, LogSource } from "@common/logger-types";
 
 const logs: LogEntry[] = [];
 const MAX_LOGS = 1000;
@@ -48,7 +47,7 @@ export function addLogEntry(entry: LogEntry): void {
       console.log(consoleMessage, entry.data || "");
   }
 
-  updateLogUI();
+  // No need to update UI here as React handles this
 }
 
 /**
@@ -145,75 +144,9 @@ export function clearLogs(): void {
   info("Logs cleared");
 
   window.api.clearLogs();
-
-  updateLogUI();
 }
 
-/**
- * Format a log entry for display
- * @param entry The log entry to format
- * @returns HTML string for the log entry
- */
-export function formatLogEntry(entry: LogEntry): string {
-  const timestamp = new Date(String(entry.timestamp)).toLocaleTimeString();
-  const levelColor = LOG_COLORS[entry.level] || "#000";
-  const sourceColor = SOURCE_COLORS[entry.source] || "#000";
-
-  let html = `
-    <div class="log-entry log-level-${entry.level} log-source-${entry.source}">
-      <span class="log-timestamp">${escapeHtml(timestamp)}</span>
-      <span class="log-level" style="color: ${levelColor}">${escapeHtml(entry.level.toUpperCase())}</span>
-      <span class="log-source" style="color: ${sourceColor}">${escapeHtml(entry.source)}</span>
-      <span class="log-message">${escapeHtml(entry.message)}</span>
-  `;
-
-  if (entry.data) {
-    try {
-      const dataStr =
-        typeof entry.data === "object" ? JSON.stringify(entry.data, null, 2) : String(entry.data);
-      html += `<pre class="log-data">${escapeHtml(dataStr)}</pre>`;
-    } catch (e) {
-      html += `<pre class="log-data">Unable to stringify data: ${escapeHtml(e)}</pre>`;
-    }
-  }
-
-  if (entry.exception) {
-    html += `<pre class="log-exception">${escapeHtml(entry.exception)}</pre>`;
-  }
-
-  html += "</div>";
-  return html;
-}
-
-/**
- * Escape HTML special characters
- * @param text The text to escape
- * @returns Escaped HTML
- */
-function escapeHtml(text: unknown): string {
-  if (text === null || text === undefined) return "";
-  const str = String(text);
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-/**
- * Update the log UI with the current logs
- */
-export function updateLogUI(): void {
-  const logContainer = document.getElementById("log-container");
-  if (!logContainer) return;
-
-  const isScrolledToBottom =
-    logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 1;
-
-  logContainer.innerHTML = logs.map(formatLogEntry).join("");
-
-  if (isScrolledToBottom) {
-    logContainer.scrollTop = logContainer.scrollHeight;
-  }
-}
+// These functions have been replaced by React components
 
 /**
  * Initialize the logger
@@ -243,7 +176,5 @@ export default {
   addLogEntry,
   getLogs,
   clearLogs,
-  formatLogEntry,
-  updateLogUI,
   initLogger,
 };

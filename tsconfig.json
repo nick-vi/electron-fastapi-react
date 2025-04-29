@@ -1,24 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    /* Base Options */
+    "target": "ESNext",
     "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "strict": true,
-    "outDir": "./dist-electron",
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Strict Type Checking */
+    "strict": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "types": ["node", "electron"],
-    "isolatedModules": true,
-    "allowJs": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path Configuration */
     "baseUrl": ".",
     "paths": {
       "@common/*": ["src/common/*"],
@@ -27,6 +26,7 @@
       "@preload/*": ["src/preload/*"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts"],
+  "exclude": ["node_modules", "dist-electron", "dist-web"],
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
 }

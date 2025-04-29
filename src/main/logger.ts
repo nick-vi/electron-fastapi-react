@@ -156,7 +156,7 @@ export function parsePythonLog(line: string): boolean {
       const entry: LogEntry = {
         timestamp: logData.timestamp || new Date().toISOString(),
         level: (logData.level || "info").toLowerCase() as LogLevel,
-        source: LogSource.PYTHON,
+        source: logData.source || LogSource.PYTHON,
         message: logData.message || "",
         data: logData.data,
         exception: logData.exception,
@@ -171,6 +171,7 @@ export function parsePythonLog(line: string): boolean {
   }
 
   if (line.trim()) {
+    // Determine if this is an error message
     const isError =
       line.includes("Traceback (most recent call last)") ||
       line.includes("Error:") ||
@@ -179,11 +180,59 @@ export function parsePythonLog(line: string): boolean {
       line.includes("ImportError:") ||
       line.includes("SyntaxError:");
 
+    // Determine if this is a Uvicorn log
+    const isUvicornLog =
+      line.includes("uvicorn.") ||
+      line.includes("Uvicorn running") ||
+      line.includes("WatchFiles detected changes");
+
+    // Clean up the message
+    let message = line.trim();
+
+    // First, try to remove the entire timestamp-logger-level pattern
+    // Format: 2025-04-22 16:22:36 - uvicorn.error - INFO -
+    const fullPatternRegex =
+      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} - [\w\.]+ - (?:INFO|ERROR|WARNING|DEBUG) - /;
+    if (fullPatternRegex.test(message)) {
+      message = message.replace(fullPatternRegex, "").trim();
+    } else {
+      // If that doesn't match, try individual patterns
+
+      // Remove log level prefixes
+      if (message.includes(" - INFO - ")) {
+        message = message.split(" - INFO - ").pop() || message;
+      } else if (message.includes(" - ERROR - ")) {
+        message = message.split(" - ERROR - ").pop() || message;
+      } else if (message.includes(" - WARNING - ")) {
+        message = message.split(" - WARNING - ").pop() || message;
+      } else if (message.includes(" - DEBUG - ")) {
+        message = message.split(" - DEBUG - ").pop() || message;
+      }
+
+      // Remove timestamp prefix (format: YYYY-MM-DD HH:MM:SS)
+      const timestampRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
+      if (timestampRegex.test(message)) {
+        message = message.replace(timestampRegex, "").trim();
+
+        // If there's a dash after the timestamp, remove it and any spaces
+        if (message.startsWith(" - ")) {
+          message = message.substring(3).trim();
+
+          // If there's a logger name after the dash, remove it too
+          const loggerNameRegex = /^[\w\.]+\s*-\s*/;
+          if (loggerNameRegex.test(message)) {
+            message = message.replace(loggerNameRegex, "").trim();
+          }
+        }
+      }
+    }
+
+    // Create and add the log entry
     addLogEntry({
       timestamp: new Date().toISOString(),
       level: isError ? LogLevel.ERROR : LogLevel.INFO,
-      source: LogSource.PYTHON,
-      message: line.trim(),
+      source: isUvicornLog ? LogSource.UVICORN : LogSource.PYTHON,
+      message: message,
     });
     return true;
   }
